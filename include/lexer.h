@@ -1,0 +1,35 @@
+#pragma once
+
+typedef enum TokenType {
+    TOKEN_EOF,          // EOF
+
+    TOKEN_LEFT_PAREN,   // (
+    TOKEN_RIGHT_PAREN,  // )
+
+    TOKEN_PLUS,         // +
+    TOKEN_MINUS,        // -
+    TOKEN_ASTERISK,     // *
+    TOKEN_SLASH,        // /
+
+    TOKEN_INT_LITERAL,  // 0
+
+    TOKEN_ERROR,        // ERROR
+} TokenType;
+
+typedef struct Token {
+    TokenType type;
+    const char* value;
+    int line;
+    int length;
+} Token;
+
+typedef struct TokenArray {
+    Token* tokens;
+    int count;
+    int capacity;
+} TokenArray;
+
+TokenArray lexer_lex(const char* source);
+void lexer_free_tokens(TokenArray* token_array);
+
+const char* token_as_cstr(TokenType type);

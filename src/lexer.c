@@ -1,0 +1,160 @@
+#include <assert.h>
+#include <ctype.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "lexer.h"
+#include "memory.h"
+
+typedef struct Lexer {
+    const char* start;
+    const char* current;
+    int line;
+} Lexer;
+
+static Lexer lexer;
+
+static bool lexer_is_at_end() {
+    return *lexer.current == '\0';
+}
+
+static char lexer_peek() {
+    return *lexer.current;
+}
+
+static char lexer_advance() {
+    if (*lexer.current == '\n') {
+        lexer.line++;
+    }
+    return *lexer.current++;
+}
+
+// TODO: EOF token is not created when newline is not present at the end
+static Token lexer_make_token(TokenType type) {
+    return (Token) {
+        .type = type,
+        .value = lexer.start,
+        .line = lexer.line,
+        .length = (int)(lexer.current - lexer.start)
+    };
+}
+
+static Token lexer_make_error_token(const char* message) {
+    return (Token) {
+        .type = TOKEN_ERROR,
+        .value = message,
+        .line = lexer.line,
+        .length = strlen(message)
+    };
+}
+
+static void lexer_skip_whitespace() {
+    for (;;) {
+        char c = lexer_peek();
+        switch (c) {
+            case ' ':
+            case '\t':
+            case '\r':
+            case '\n':
+                lexer_advance();
+                break;
+            default:
+                return;
+        }
+        // TODO: handle comments
+    }
+}
+
+static Token lexer_read_int() {
+    while (isdigit(lexer_peek())) {
+        lexer_advance();
+    }
+    return lexer_make_token(TOKEN_INT_LITERAL);
+}
+
+static Token lexer_next_token() {
+    lexer_skip_whitespace();
+    lexer.start = lexer.current;
+    
+    if (lexer_is_at_end()) {
+        return lexer_make_token(TOKEN_EOF);
+    }
+
+    char c = lexer_advance();
+    switch (c) {
+        case '(':
+            return lexer_make_token(TOKEN_LEFT_PAREN);
+        case ')':
+            return lexer_make_token(TOKEN_RIGHT_PAREN);
+        case '+':
+            return lexer_make_token(TOKEN_PLUS);
+        case '-':
+            return lexer_make_token(TOKEN_MINUS);
+        case '*':
+            return lexer_make_token(TOKEN_ASTERISK);
+        case '/':
+            return lexer_make_token(TOKEN_SLASH);
+        default:
+            break;
+    }
+    
+    if (isdigit(c)) {
+        return lexer_read_int();
+    }
+
+    return lexer_make_error_token("Unexpected character");
+}
+
+TokenArray lexer_lex(const char* source) {
+    lexer.start = source;
+    lexer.current = source;
+    lexer.line = 1;
+
+    TokenArray array = { 0 };
+
+    while (!lexer_is_at_end()) {
+        if (array.capacity < array.count + 1) {
+            int old_capacity = array.capacity;
+            array.capacity = GROW_CAPACITY(old_capacity);
+            array.tokens = GROW_ARRAY(Token, array.tokens, old_capacity, array.capacity);
+        }
+        array.tokens[array.count++] = lexer_next_token();
+    }
+    return array;
+}
+
+void lexer_free_tokens(TokenArray* token_array) {
+    token_array->tokens = reallocate(token_array->tokens, 0);
+    token_array->count = 0;
+    token_array->capacity = 0;
+}
+
+const char* token_as_cstr(TokenType type) {
+    static const char* token_strings[] = {
+        "EOF",
+
+        "(",
+        ")",
+
+        "+",
+        "-",
+        "*",
+        "/",
+
+        "INT_LITERAL",
+        
+        "ERROR",
+    };
+
+    if (sizeof(token_strings) / sizeof(token_strings[0]) != TOKEN_ERROR + 1) {
+        fprintf(stderr, "lexer::token_as_cstr: not all token types are handled\n");
+        exit(1);
+    }
+    if (type < 0 || type > TOKEN_ERROR) {
+        fprintf(stderr, "lexer::token_as_cstr: unknown token type with value: %d\n", type);
+        exit(1);
+    }
+
+    return token_strings[type];
+}
