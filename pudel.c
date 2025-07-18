@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "debug.h"
+#include "interpreter.h"
 #include "io.h"
 #include "lexer.h"
 #include "parser.h"
@@ -15,6 +16,11 @@ int main() {
 
     ASTNode* ast = parser_parse(&token_array);
     debug_print_ast(ast, 0);
+
+    printf("----------------------------------------------------------------\n");
+
+    int result = interpreter_interpret(ast);
+    printf("Result: %d\n", result);
 
     parser_free_ast(ast);
     lexer_free_tokens(&token_array);
