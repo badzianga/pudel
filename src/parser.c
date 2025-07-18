@@ -93,6 +93,20 @@ static ASTNode* make_node_block() {
     return node;
 }
 
+static ASTNode* make_node_block_filled_with(int argc, ...) {
+    ASTNode* node = make_node_block();
+    node->scope.capacity = argc;
+    node->scope.statements = GROW_ARRAY(ASTNode*, node->scope.statements, 0, node->scope.capacity);
+
+    va_list argv;
+    va_start(argv, argc);
+    for (int i = 0; i < argc; ++i) {
+        node->scope.statements[node->scope.count++] = va_arg(argv, ASTNode*);
+    }
+    va_end(argv);
+    return node;
+}
+
 static ASTNode* make_node_assignment(char* name, TokenType op, ASTNode* value) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_ASSIGNMENT;
@@ -146,9 +160,11 @@ static ASTNode* parse_program();
 static ASTNode* parse_declaration();
 static ASTNode* parse_variable_declaration();
 static ASTNode* parse_statement();
+static ASTNode* parse_expression_statement();
 static ASTNode* parse_print_statement();
 static ASTNode* parse_if_statement();
 static ASTNode* parse_while_statement();
+static ASTNode* parse_for_statement();
 static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
@@ -197,10 +213,9 @@ static ASTNode* parse_variable_declaration() {
 
 static ASTNode* parse_statement() {
     if (match(1, TOKEN_PRINT)) return parse_print_statement();
-
     if (match(1, TOKEN_IF)) return parse_if_statement();
-
     if (match(1, TOKEN_WHILE)) return parse_while_statement();
+    if (match(1, TOKEN_FOR)) return parse_for_statement();
 
     if (match(1, TOKEN_LEFT_BRACE)) {
         ASTNode* block = parse_block();
@@ -208,6 +223,10 @@ static ASTNode* parse_statement() {
         return block;
     }
 
+    return parse_expression_statement();
+}
+
+static ASTNode* parse_expression_statement() {
     ASTNode* expression = parse_expression();
     consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
     return make_node_expression_statement(expression);
@@ -245,6 +264,50 @@ static ASTNode* parse_while_statement() {
     return make_node_while_statement(condition, body);
 }
 
+static ASTNode* parse_for_statement() {
+    consume_expected(TOKEN_LEFT_PAREN, "expected '(' after 'for'");
+
+    ASTNode* initializer;
+    if (match(1, TOKEN_SEMICOLON)) {
+        initializer = NULL;
+    }
+    else if (match(1, TOKEN_INT)) {
+        initializer = parse_variable_declaration();
+    }
+    else {
+        initializer = parse_expression_statement();
+    }
+
+    ASTNode* condition = NULL;
+    if (parser.current->type != TOKEN_SEMICOLON) {
+        condition = parse_expression();
+    }
+    consume_expected(TOKEN_SEMICOLON, "expected ';' after loop condition");
+
+    ASTNode* increment = NULL;
+    if (parser.current->type != TOKEN_RIGHT_PAREN) {
+        increment = parse_expression();
+    }
+    consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after for clauses");
+
+    ASTNode* body = parse_statement();
+
+    if (increment != NULL) {
+        body = make_node_block_filled_with(2, body, make_node_expression_statement(increment));
+    }
+
+    if (condition == NULL) {
+        condition = make_node_literal(1);
+    }
+    body = make_node_while_statement(condition, body); 
+
+    if (initializer != NULL) {
+        body = make_node_block_filled_with(2, initializer, body);
+    }
+
+    return body;
+}
+
 static ASTNode* parse_block() {
     ASTNode* node = make_node_block();
     while (parser.current->type != TOKEN_RIGHT_BRACE && parser.current->type != TOKEN_EOF) {
@@ -265,7 +328,7 @@ static ASTNode* parse_expression() {
 static ASTNode* parse_assignment() {
     ASTNode* expression = parse_logical_or();
 
-    if (match(1, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL)) {
+    if (match(5, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL)) {
         TokenType op = previous()->type;
         ASTNode* value = parse_assignment();
         
