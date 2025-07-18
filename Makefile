@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -Wextra -Iinclude
+CFLAGS := -Wall -Wextra -Iinclude -ggdb
 
 INC_DIR := include
 SRC_DIR := src
