@@ -33,6 +33,26 @@ int interpreter_interpret(ASTNode* root) {
                 interpreter_interpret(root->scope.statements[i]);
             }
         } break;
+        case AST_NODE_LOGICAL: {
+            int left = interpreter_interpret(root->binary.left);
+            switch (root->binary.op) {
+                case TOKEN_LOGICAL_OR: {
+                    if (left) return left;
+                } break;
+                case TOKEN_LOGICAL_AND: {
+                    if (!left) return left;
+                } break;
+                default: {
+                    fprintf(
+                        stderr,
+                        "error: invalid operator in logical operation: '%s'\n",
+                        token_as_cstr(root->binary.op)
+                    );
+                    exit(1);
+                } break;
+            }
+            return interpreter_interpret(root->binary.right);
+        } break;
         case AST_NODE_BINARY: {
             switch (root->binary.op) {
                 case TOKEN_PLUS:          return INTERPRET_BINARY(root, +);

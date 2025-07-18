@@ -21,6 +21,10 @@ typedef enum TokenType {
     TOKEN_GREATER_EQUAL,  // >=
     TOKEN_LESS,           // <
     TOKEN_LESS_EQUAL,     // <=
+    TOKEN_BIT_AND,        // &
+    TOKEN_LOGICAL_AND,    // &&
+    TOKEN_BIT_OR,         // |
+    TOKEN_LOGICAL_OR,     // ||
 
     TOKEN_INT_LITERAL,    // 0
 

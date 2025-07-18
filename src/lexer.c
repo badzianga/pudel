@@ -148,6 +148,10 @@ static Token next_token() {
             return advance_if('=') ? make_token(TOKEN_GREATER_EQUAL) : make_token(TOKEN_GREATER);
         case '<':
             return advance_if('=') ? make_token(TOKEN_LESS_EQUAL) : make_token(TOKEN_LESS);
+        case '&':
+            return advance_if('&') ? make_token(TOKEN_LOGICAL_AND) : make_token(TOKEN_BIT_AND);
+        case '|':
+            return advance_if('|') ? make_token(TOKEN_LOGICAL_OR) : make_token(TOKEN_BIT_OR);
         default:
             break;
     }
@@ -208,6 +212,10 @@ const char* token_as_cstr(TokenType type) {
         ">=",
         "<",
         "<=",
+        "&",
+        "&&",
+        "|",
+        "||",
 
         "INT_LITERAL",
 

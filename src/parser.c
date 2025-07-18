@@ -76,6 +76,15 @@ static ASTNode* make_node_block() {
     return node;
 }
 
+static ASTNode* make_node_logical(ASTNode* left, TokenType op, ASTNode* right) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_LOGICAL;
+    node->binary.left = left;
+    node->binary.op = op;
+    node->binary.right = right;
+    return node;
+}
+
 static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_BINARY;
@@ -107,6 +116,8 @@ static ASTNode* parse_if_statement();
 static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
+static ASTNode* parse_logical_or();
+static ASTNode* parse_logical_and();
 static ASTNode* parse_equality();
 static ASTNode* parse_comparison();
 static ASTNode* parse_term();
@@ -181,7 +192,25 @@ static ASTNode* parse_block() {
 }
 
 static ASTNode* parse_expression() {
-    return parse_equality();
+    return parse_logical_or();
+}
+
+static ASTNode* parse_logical_or() {
+    ASTNode* left = parse_logical_and();
+    while (match(1, TOKEN_LOGICAL_OR)) {
+        ASTNode* right = parse_logical_and();
+        left = make_node_logical(left, TOKEN_LOGICAL_OR, right);
+    }
+    return left;
+}
+
+static ASTNode* parse_logical_and() {
+    ASTNode* left = parse_equality();
+    while (match(1, TOKEN_LOGICAL_AND)) {
+        ASTNode* right = parse_equality();
+        left = make_node_logical(left, TOKEN_LOGICAL_AND, right);
+    }
+    return left;
 }
 
 static ASTNode* parse_equality() {
@@ -287,6 +316,10 @@ void parser_free_ast(ASTNode* root) {
                 free(root->scope.statements[i]);
             }
             free(root->scope.statements);
+        } break;
+        case AST_NODE_LOGICAL: {
+            free(root->binary.left);
+            free(root->binary.right);
         } break;
         case AST_NODE_BINARY: {
             free(root->binary.left);

@@ -64,6 +64,11 @@ void debug_print_ast(ASTNode* root, int indent) {
                 debug_print_ast(root->scope.statements[i], indent + 1);
             }
         } break;
+        case AST_NODE_LOGICAL: {
+            printf("Logical: %s\n", token_as_cstr(root->binary.op));
+            debug_print_ast(root->binary.left, indent + 1);
+            debug_print_ast(root->binary.right, indent + 1);
+        } break;
         case AST_NODE_BINARY: {
             printf("Binary: %s\n", token_as_cstr(root->binary.op));
             debug_print_ast(root->binary.left, indent + 1);
