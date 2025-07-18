@@ -29,11 +29,11 @@ typedef struct ASTNode {
             int capacity;
         } scope;
 
-        // var decl, assignment
+        // var decl
         struct {
             char* name;
-            struct ASTNode* value;
-        } assignment;
+            struct ASTNode* initializer;
+        } variable_declaration;
 
         // expr stmt
         struct ASTNode* expression;
@@ -50,6 +50,13 @@ typedef struct ASTNode {
             struct ASTNode* condition;
             struct ASTNode* body;
         } while_statement;
+
+        // assignment
+        struct {
+            char* name;
+            TokenType op;
+            struct ASTNode* value;
+        } assignment;
 
         // logical, binary
         struct {

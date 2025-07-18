@@ -51,8 +51,8 @@ static ASTNode* make_node_program() {
 static ASTNode* make_node_variable_declaration(char* name, ASTNode* initializer) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_VARIABLE_DECLARATION;
-    node->assignment.name = name;
-    node->assignment.value = initializer;
+    node->variable_declaration.name = name;
+    node->variable_declaration.initializer = initializer;
     return node;
 }
 
@@ -93,10 +93,11 @@ static ASTNode* make_node_block() {
     return node;
 }
 
-static ASTNode* make_node_assignment(char* name, ASTNode* value) {
+static ASTNode* make_node_assignment(char* name, TokenType op, ASTNode* value) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_ASSIGNMENT;
     node->assignment.name = name;
+    node->assignment.op = op;
     node->assignment.value = value;
     return node;
 }
@@ -264,11 +265,12 @@ static ASTNode* parse_expression() {
 static ASTNode* parse_assignment() {
     ASTNode* expression = parse_logical_or();
 
-    if (match(1, TOKEN_EQUAL)) {
+    if (match(1, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL)) {
+        TokenType op = previous()->type;
         ASTNode* value = parse_assignment();
         
         if (expression->type == AST_NODE_VARIABLE) {
-            return make_node_assignment(expression->name, value);
+            return make_node_assignment(expression->name, op, value);
         }
 
         fprintf(stderr, "error: invalid assignment target\n");
@@ -387,8 +389,8 @@ void parser_free_ast(ASTNode* root) {
             free(root->scope.statements);
         } break;
         case AST_NODE_VARIABLE_DECLARATION: {
-            free(root->assignment.name);
-            free(root->assignment.value);
+            free(root->variable_declaration.name);
+            free(root->variable_declaration.initializer);
         } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             free(root->expression);

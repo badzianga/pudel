@@ -7,6 +7,7 @@
 
 #define INTERPRET_BINARY(node, op) interpreter_interpret((node)->binary.left) op interpreter_interpret((node)->binary.right)
 #define INTERPRET_UNARY(node, op) op interpreter_interpret((node)->unary.right)
+#define INTERPRET_ASSIGNMENT(var, op, val) (var)->value op val 
 
 typedef struct Variable {
     char* name;
@@ -34,15 +35,15 @@ int interpreter_interpret(ASTNode* root) {
             }
         } break;
         case AST_NODE_VARIABLE_DECLARATION: {
-            if (get_variable(root->assignment.name) != NULL) {
-                fprintf(stderr, "error: redefinition of variable '%s'\n", root->assignment.name);
+            if (get_variable(root->variable_declaration.name) != NULL) {
+                fprintf(stderr, "error: redefinition of variable '%s'\n", root->variable_declaration.name);
                 exit(1);
             }
             int value = 0;
-            if (root->assignment.value != NULL) {
-                value = interpreter_interpret(root->assignment.value);
+            if (root->variable_declaration.initializer != NULL) {
+                value = interpreter_interpret(root->variable_declaration.initializer);
             }
-            variables[variable_count++] = (Variable) { root->assignment.name, value };
+            variables[variable_count++] = (Variable) { root->variable_declaration.name, value };
         } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             interpreter_interpret(root->expression);
@@ -77,7 +78,31 @@ int interpreter_interpret(ASTNode* root) {
                 exit(1);
             }
             int value = interpreter_interpret(root->assignment.value);
-            var->value = value;
+            switch(root->assignment.op) {
+                case TOKEN_PLUS_EQUAL: {
+                    INTERPRET_ASSIGNMENT(var, +=, value);
+                } break;
+                case TOKEN_MINUS_EQUAL: {
+                    INTERPRET_ASSIGNMENT(var, -=, value);
+                } break;
+                case TOKEN_ASTERISK_EQUAL: {
+                    INTERPRET_ASSIGNMENT(var, *=, value);
+                } break;
+                case TOKEN_SLASH_EQUAL: {
+                    INTERPRET_ASSIGNMENT(var, /=, value);
+                } break;
+                case TOKEN_EQUAL: {
+                    INTERPRET_ASSIGNMENT(var, =, value);
+                } break;
+                default: {
+                    fprintf(
+                        stderr,
+                        "error: invalid operator in assignment operation: '%s'\n",
+                        token_as_cstr(root->assignment.op)
+                    );
+                    exit(1);
+                } break;
+            }
         } break;
         case AST_NODE_LOGICAL: {
             int left = interpreter_interpret(root->binary.left);

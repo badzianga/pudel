@@ -136,13 +136,13 @@ static Token next_token() {
         case ';':
             return make_token(TOKEN_SEMICOLON);
         case '+':
-            return make_token(TOKEN_PLUS);
+            return advance_if('=') ? make_token(TOKEN_PLUS_EQUAL) : make_token(TOKEN_PLUS);
         case '-':
-            return make_token(TOKEN_MINUS);
+            return advance_if('=') ? make_token(TOKEN_MINUS_EQUAL) : make_token(TOKEN_MINUS);
         case '*':
-            return make_token(TOKEN_ASTERISK);
+            return advance_if('=') ? make_token(TOKEN_ASTERISK_EQUAL) : make_token(TOKEN_ASTERISK);
         case '/':
-            return make_token(TOKEN_SLASH);
+            return advance_if('=') ? make_token(TOKEN_SLASH_EQUAL) : make_token(TOKEN_SLASH);
         case '=':
             return advance_if('=') ? make_token(TOKEN_EQUAL_EQUAL) : make_token(TOKEN_EQUAL);
         case '!':
@@ -200,9 +200,13 @@ const char* token_as_cstr(TokenType type) {
         ";",
 
         "+",
+        "+=",
         "-",
+        "-=",
         "*",
+        "*=",
         "/",
+        "/=",
         "=",
         "==",
         "!",
