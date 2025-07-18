@@ -31,6 +31,8 @@ typedef enum TokenType {
     TOKEN_PRINT,          // print
     TOKEN_IF,             // if
     TOKEN_ELSE,           // else
+    TOKEN_WHILE,          // while
+    TOKEN_FOR,            // for
 
     TOKEN_ERROR,          // ERROR
 } TokenType;

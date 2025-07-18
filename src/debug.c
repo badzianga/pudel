@@ -58,6 +58,15 @@ void debug_print_ast(ASTNode* root, int indent) {
                 debug_print_ast(root->if_statement.else_branch, indent + 1);
             }
         } break;
+        case AST_NODE_WHILE_STATEMENT: {
+            printf("While:\n");
+            debug_print_ast(root->while_statement.condition, indent + 1);
+            for (int i = 0; i < indent; ++i) printf("  ");
+            if (root->while_statement.body != NULL) {
+                printf("Then:\n");
+                debug_print_ast(root->while_statement.body, indent + 1);
+            }
+        } break;
         case AST_NODE_BLOCK: {
             printf("Block:\n");
             for (int i = 0; i < root->scope.count; ++i) {

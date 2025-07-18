@@ -89,6 +89,8 @@ static Token read_keyword() {
         "print",
         "if",
         "else",
+        "while",
+        "for",
     };
     const int keywords_amount = sizeof(keywords) / sizeof(keywords[0]);
 
@@ -222,6 +224,8 @@ const char* token_as_cstr(TokenType type) {
         "print",
         "if",
         "else",
+        "while",
+        "for",
 
         "ERROR",
     };

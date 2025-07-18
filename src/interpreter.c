@@ -28,6 +28,13 @@ int interpreter_interpret(ASTNode* root) {
                 interpreter_interpret(root->if_statement.else_branch);
             }
         } break;
+        case AST_NODE_WHILE_STATEMENT: {
+            while (interpreter_interpret(root->while_statement.condition)) {
+                if (root->while_statement.body != NULL) {
+                    interpreter_interpret(root->while_statement.body);
+                }
+            }
+        } break;
         case AST_NODE_BLOCK: {
             for (int i = 0; i < root->scope.count; ++i) {
                 interpreter_interpret(root->scope.statements[i]);

@@ -70,6 +70,14 @@ static ASTNode* make_node_if_statement(ASTNode* condition, ASTNode* then_branch,
     return node;
 }
 
+static ASTNode* make_node_while_statement(ASTNode* condition, ASTNode* body) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_WHILE_STATEMENT;
+    node->while_statement.condition = condition;
+    node->while_statement.body = body;
+    return node;
+}
+
 static ASTNode* make_node_block() {
     ASTNode* node = calloc(1, sizeof(ASTNode));
     node->type = AST_NODE_BLOCK;
@@ -113,6 +121,7 @@ static ASTNode* parse_program();
 static ASTNode* parse_statement();
 static ASTNode* parse_print_statement();
 static ASTNode* parse_if_statement();
+static ASTNode* parse_while_statement();
 static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
@@ -147,6 +156,10 @@ static ASTNode* parse_statement() {
         return parse_if_statement();
     }
 
+    if (match(1, TOKEN_WHILE)) {
+        return parse_while_statement();
+    }
+
     if (match(1, TOKEN_LEFT_BRACE)) {
         ASTNode* block = parse_block();
         consume_expected(TOKEN_RIGHT_BRACE, "expected '}' after block");
@@ -176,6 +189,18 @@ static ASTNode* parse_if_statement() {
     }
 
     return make_node_if_statement(condition, then_branch, else_branch);
+}
+
+static ASTNode* parse_while_statement() {
+    consume_expected(TOKEN_LEFT_PAREN, "expected '(' after 'while'");
+    ASTNode* condition = parse_expression();
+    consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after 'while' condition");
+
+    if (match(1, TOKEN_SEMICOLON)) {
+        return make_node_while_statement(condition, NULL);
+    }
+    ASTNode* body = parse_statement();
+    return make_node_while_statement(condition, body);
 }
 
 static ASTNode* parse_block() {
@@ -310,6 +335,10 @@ void parser_free_ast(ASTNode* root) {
             free(root->if_statement.condition);
             free(root->if_statement.then_branch);
             free(root->if_statement.else_branch);
+        } break;
+        case AST_NODE_WHILE_STATEMENT: {
+            free(root->while_statement.condition);
+            free(root->while_statement.body);
         } break;
         case AST_NODE_BLOCK: {
             for (int i = 0; i < root->scope.count; ++i) {
