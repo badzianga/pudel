@@ -1,11 +1,30 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "interpreter.h"
 #include "lexer.h"
 #include "parser.h"
 
 #define INTERPRET_BINARY(node, op) interpreter_interpret((node)->binary.left) op interpreter_interpret((node)->binary.right)
 #define INTERPRET_UNARY(node, op) op interpreter_interpret((node)->unary.right)
+
+typedef struct Variable {
+    char* name;
+    int value;
+} Variable;
+
+static Variable variables[128];
+static int variable_count = 0;
+
+static Variable* get_variable(char* name) {
+    Variable* end = variables + variable_count;
+    for (Variable* var = variables; var != end; ++var) {        
+        if (strcmp(name, var->name) == 0) {
+            return var;
+        }
+    }
+    return NULL;
+}
 
 int interpreter_interpret(ASTNode* root) {
     switch (root->type) {
@@ -89,7 +108,7 @@ int interpreter_interpret(ASTNode* root) {
                     exit(1);
                 }
             }
-        }
+        } break;
         case AST_NODE_UNARY: {
             switch (root->unary.op) {
                 case TOKEN_MINUS: return INTERPRET_UNARY(root, -);
@@ -103,10 +122,18 @@ int interpreter_interpret(ASTNode* root) {
                     exit(1);
                 }
             }
-        }
+        } break;
         case AST_NODE_LITERAL: {
             return root->literal;
-        }
+        } break;
+        case AST_NODE_VARIABLE: {
+            Variable* var = get_variable(root->name);
+            if (var == NULL) {
+                fprintf(stderr, "error: undeclared identifier '%s'\n", root->name);
+                exit(1);
+            }
+            return var->value;
+        } break;
         default: {
             fprintf(
                 stderr,
