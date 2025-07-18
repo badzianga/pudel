@@ -20,6 +20,11 @@ int interpreter_interpret(ASTNode* root) {
         case AST_NODE_PRINT_STATEMENT: {
             printf("%d\n", interpreter_interpret(root->expression));
         } break;
+        case AST_NODE_BLOCK: {
+            for (int i = 0; i < root->scope.count; ++i) {
+                interpreter_interpret(root->scope.statements[i]);
+            }
+        } break;
         case AST_NODE_BINARY: {
             switch (root->binary.op) {
                 case TOKEN_PLUS:     return INTERPRET_BINARY(root, +);

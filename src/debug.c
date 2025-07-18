@@ -48,6 +48,12 @@ void debug_print_ast(ASTNode* root, int indent) {
             printf("Print:\n");
             debug_print_ast(root->expression, indent + 1);
         } break;
+        case AST_NODE_BLOCK: {
+            printf("Block:\n");
+            for (int i = 0; i < root->scope.count; ++i) {
+                debug_print_ast(root->scope.statements[i], indent + 1);
+            }
+        } break;
         case AST_NODE_BINARY: {
             printf("Binary: %s\n", token_as_cstr(root->binary.op));
             debug_print_ast(root->binary.left, indent + 1);

@@ -61,6 +61,12 @@ static ASTNode* make_node_print_statement(ASTNode* expression) {
     return node;
 }
 
+static ASTNode* make_node_block() {
+    ASTNode* node = calloc(1, sizeof(ASTNode));
+    node->type = AST_NODE_BLOCK;
+    return node;
+}
+
 static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_BINARY;
@@ -88,6 +94,7 @@ static ASTNode* make_node_literal(int value) {
 static ASTNode* parse_program();
 static ASTNode* parse_statement();
 static ASTNode* parse_print_statement();
+static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
 static ASTNode* parse_term();
@@ -109,6 +116,12 @@ static ASTNode* parse_program() {
 }
 
 static ASTNode* parse_statement() {
+    if (match(1, TOKEN_LEFT_BRACE)) {
+        ASTNode* block = parse_block();
+        consume_expected(TOKEN_RIGHT_BRACE, "expected '}' after block");
+        return block;
+    }
+
     if (match(1, TOKEN_PRINT)) {
         return parse_print_statement();
     }
@@ -122,6 +135,19 @@ static ASTNode* parse_print_statement() {
     ASTNode* expression = parse_expression();
     consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
     return make_node_print_statement(expression);
+}
+
+static ASTNode* parse_block() {
+    ASTNode* node = make_node_block();
+    while (parser.current->type != TOKEN_RIGHT_BRACE && parser.current->type != TOKEN_EOF) {
+        if (node->scope.capacity < node->scope.count + 1) {
+            int old_capacity = node->scope.capacity;
+            node->scope.capacity = GROW_CAPACITY(old_capacity);
+            node->scope.statements = GROW_ARRAY(ASTNode*, node->scope.statements, old_capacity, node->scope.capacity);
+        }
+        node->scope.statements[node->scope.count++] = parse_statement();
+    }
+    return node;
 }
 
 static ASTNode* parse_expression() {
@@ -200,6 +226,12 @@ void parser_free_ast(ASTNode* root) {
         } break;
         case AST_NODE_PRINT_STATEMENT: {
             free(root->expression);
+        } break;
+        case AST_NODE_BLOCK: {
+            for (int i = 0; i < root->scope.count; ++i) {
+                free(root->scope.statements[i]);
+            }
+            free(root->scope.statements);
         } break;
         case AST_NODE_BINARY: {
             free(root->binary.left);
