@@ -319,7 +319,6 @@ static ASTNode* parse_comparison() {
 
 static ASTNode* parse_term() {
     ASTNode* left = parse_factor();
-
     while(match(2, TOKEN_PLUS, TOKEN_MINUS)) {
         TokenType op = previous()->type;
         ASTNode* right = parse_factor();
@@ -330,7 +329,6 @@ static ASTNode* parse_term() {
 
 static ASTNode* parse_factor() {
     ASTNode* left = parse_unary();
-
     while (match(2, TOKEN_ASTERISK, TOKEN_SLASH)) {
         TokenType op = previous()->type;
         ASTNode* right = parse_unary();
