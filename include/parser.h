@@ -2,6 +2,7 @@
 #include "lexer.h"
 
 typedef enum ASTNodeType {
+    AST_NODE_PROGRAM,
     AST_NODE_EXPRESSION_STATEMENT,
     AST_NODE_PRINT_STATEMENT,
 
@@ -14,6 +15,12 @@ typedef struct ASTNode {
     ASTNodeType type;
 
     union {
+        struct {
+            struct ASTNode** statements;
+            int count;
+            int capacity;
+        } scope;
+
         struct ASTNode* expression;
 
         struct {

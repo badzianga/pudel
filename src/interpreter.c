@@ -9,6 +9,11 @@
 
 int interpreter_interpret(ASTNode* root) {
     switch (root->type) {
+        case AST_NODE_PROGRAM: {
+            for (int i = 0; i < root->scope.count; ++i) {
+                interpreter_interpret(root->scope.statements[i]);
+            }
+        } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             interpreter_interpret(root->expression);
         } break;

@@ -2,8 +2,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "parser.h"
 #include "lexer.h"
+#include "memory.h"
+#include "parser.h"
 
 typedef struct Parser {
     Token* tokens;
@@ -38,6 +39,12 @@ static void consume_expected(TokenType token, const char* error_if_fail) {
 
 inline static Token* previous() {
     return parser.current - 1;
+}
+
+static ASTNode* make_node_program() {
+    ASTNode* node = calloc(1, sizeof(ASTNode));
+    node->type = AST_NODE_PROGRAM;
+    return node;
 }
 
 static ASTNode* make_node_expression_statement(ASTNode* expression) {
@@ -78,6 +85,7 @@ static ASTNode* make_node_literal(int value) {
     return node;
 }
 
+static ASTNode* parse_program();
 static ASTNode* parse_statement();
 static ASTNode* parse_print_statement();
 
@@ -86,6 +94,19 @@ static ASTNode* parse_term();
 static ASTNode* parse_factor();
 static ASTNode* parse_unary();
 static ASTNode* parse_primary();
+
+static ASTNode* parse_program() {
+    ASTNode* node = make_node_program();
+    while (parser.current->type != TOKEN_EOF) {
+        if (node->scope.capacity < node->scope.count + 1) {
+            int old_capacity = node->scope.capacity;
+            node->scope.capacity = GROW_CAPACITY(old_capacity);
+            node->scope.statements = GROW_ARRAY(ASTNode*, node->scope.statements, old_capacity, node->scope.capacity);
+        }
+        node->scope.statements[node->scope.count++] = parse_statement();
+    }
+    return node;
+}
 
 static ASTNode* parse_statement() {
     if (match(1, TOKEN_PRINT)) {
@@ -163,11 +184,17 @@ ASTNode* parser_parse(TokenArray* token_array) {
     parser.count = token_array->count;
     parser.current = parser.tokens;
 
-    return parse_statement();
+    return parse_program();
 }
 
 void parser_free_ast(ASTNode* root) {
     switch (root->type) {
+        case AST_NODE_PROGRAM: {
+            for (int i = 0; i < root->scope.count; ++i) {
+                free(root->scope.statements[i]);
+            }
+            free(root->scope.statements);
+        } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             free(root->expression);
         } break;

@@ -34,6 +34,12 @@ void debug_print_ast(ASTNode* root, int indent) {
     }
 
     switch (root->type) {
+        case AST_NODE_PROGRAM: {
+            printf("Program:\n");
+            for (int i = 0; i < root->scope.count; ++i) {
+                debug_print_ast(root->scope.statements[i], indent + 1);
+            }
+        } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             printf("Expression:\n");
             debug_print_ast(root->expression, indent + 1);
