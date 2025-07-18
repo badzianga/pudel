@@ -1,3 +1,7 @@
+.idea/
+.vs/
+.vscode/
+
 obj/
 
 pudel
