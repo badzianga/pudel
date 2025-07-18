@@ -7,7 +7,7 @@
 #include "parser.h"
 
 int main() {
-    char* source = file_read("examples/expression.pud");
+    char* source = file_read("examples/all_features.pud");
 
     TokenArray token_array = lexer_lex(source);
     debug_print_token_array(&token_array);
@@ -19,8 +19,7 @@ int main() {
 
     printf("----------------------------------------------------------------\n");
 
-    int result = interpreter_interpret(ast);
-    printf("Result: %d\n", result);
+    interpreter_interpret(ast);
 
     parser_free_ast(ast);
     lexer_free_tokens(&token_array);

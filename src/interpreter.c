@@ -9,16 +9,18 @@
 
 int interpreter_interpret(ASTNode* root) {
     switch (root->type) {
+        case AST_NODE_EXPRESSION_STATEMENT: {
+            interpreter_interpret(root->expression);
+        } break;
+        case AST_NODE_PRINT_STATEMENT: {
+            printf("%d\n", interpreter_interpret(root->expression));
+        } break;
         case AST_NODE_BINARY: {
             switch (root->binary.op) {
-                case TOKEN_PLUS:
-                    return INTERPRET_BINARY(root, +);
-                case TOKEN_MINUS:
-                    return INTERPRET_BINARY(root, -);
-                case TOKEN_ASTERISK:
-                    return INTERPRET_BINARY(root, *);
-                case TOKEN_SLASH:
-                    return INTERPRET_BINARY(root, /);
+                case TOKEN_PLUS:     return INTERPRET_BINARY(root, +);
+                case TOKEN_MINUS:    return INTERPRET_BINARY(root, -);
+                case TOKEN_ASTERISK: return INTERPRET_BINARY(root, *);
+                case TOKEN_SLASH:    return INTERPRET_BINARY(root, /);
                 default: {
                     fprintf(
                         stderr,
@@ -31,8 +33,7 @@ int interpreter_interpret(ASTNode* root) {
         }
         case AST_NODE_UNARY: {
             switch (root->unary.op) {
-                case TOKEN_MINUS:
-                    return INTERPRET_UNARY(root, -);
+                case TOKEN_MINUS: return INTERPRET_UNARY(root, -);
                 default: {
                     fprintf(
                         stderr,

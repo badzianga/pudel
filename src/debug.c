@@ -34,6 +34,14 @@ void debug_print_ast(ASTNode* root, int indent) {
     }
 
     switch (root->type) {
+        case AST_NODE_EXPRESSION_STATEMENT: {
+            printf("Expression:\n");
+            debug_print_ast(root->expression, indent + 1);
+        } break;
+        case AST_NODE_PRINT_STATEMENT: {
+            printf("Print:\n");
+            debug_print_ast(root->expression, indent + 1);
+        } break;
         case AST_NODE_BINARY: {
             printf("Binary: %s\n", token_as_cstr(root->binary.op));
             debug_print_ast(root->binary.left, indent + 1);

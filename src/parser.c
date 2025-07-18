@@ -40,6 +40,20 @@ inline static Token* previous() {
     return parser.current - 1;
 }
 
+static ASTNode* make_node_expression_statement(ASTNode* expression) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_EXPRESSION_STATEMENT;
+    node->expression = expression;
+    return node;
+}
+
+static ASTNode* make_node_print_statement(ASTNode* expression) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_PRINT_STATEMENT;
+    node->expression = expression;
+    return node;
+}
+
 static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_BINARY;
@@ -64,11 +78,30 @@ static ASTNode* make_node_literal(int value) {
     return node;
 }
 
+static ASTNode* parse_statement();
+static ASTNode* parse_print_statement();
+
 static ASTNode* parse_expression();
 static ASTNode* parse_term();
 static ASTNode* parse_factor();
 static ASTNode* parse_unary();
 static ASTNode* parse_primary();
+
+static ASTNode* parse_statement() {
+    if (match(1, TOKEN_PRINT)) {
+        return parse_print_statement();
+    }
+
+    ASTNode* expression = parse_expression();
+    consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
+    return make_node_expression_statement(expression);
+}
+
+static ASTNode* parse_print_statement() {
+    ASTNode* expression = parse_expression();
+    consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
+    return make_node_print_statement(expression);
+}
 
 static ASTNode* parse_expression() {
     return parse_term();
@@ -130,11 +163,17 @@ ASTNode* parser_parse(TokenArray* token_array) {
     parser.count = token_array->count;
     parser.current = parser.tokens;
 
-    return parse_term();
+    return parse_statement();
 }
 
 void parser_free_ast(ASTNode* root) {
     switch (root->type) {
+        case AST_NODE_EXPRESSION_STATEMENT: {
+            free(root->expression);
+        } break;
+        case AST_NODE_PRINT_STATEMENT: {
+            free(root->expression);
+        } break;
         case AST_NODE_BINARY: {
             free(root->binary.left);
             free(root->binary.right);

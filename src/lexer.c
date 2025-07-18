@@ -73,6 +73,36 @@ static Token read_int() {
     return make_token(TOKEN_INT_LITERAL);
 }
 
+static Token read_keyword() {
+    while (isalpha(peek())) {
+        advance();
+    }
+
+    static const char* keywords[] = {
+        "print",
+    };
+    const int keywords_amount = sizeof(keywords) / sizeof(keywords[0]);
+
+    for (int i = 0; i < keywords_amount; ++i) {
+        int length = (int)(lexer.current - lexer.start);
+        int keyword_length = strlen(keywords[i]);
+
+        if (length != keyword_length) continue;
+
+        bool might_be_keyword = true;
+        for (int j = 0; j < length; ++j) {
+            if (*(lexer.start + j) != keywords[i][j]) {
+                might_be_keyword = false;
+                break;
+            }
+        }
+        if (might_be_keyword) {
+            return make_token(TOKEN_PRINT + i);
+        }
+    }
+    return make_error_token("identifiers are not supported yet");
+}
+
 static Token next_token() {
     skip_whitespace();
     lexer.start = lexer.current;
@@ -87,6 +117,8 @@ static Token next_token() {
             return make_token(TOKEN_LEFT_PAREN);
         case ')':
             return make_token(TOKEN_RIGHT_PAREN);
+        case ';':
+            return make_token(TOKEN_SEMICOLON);
         case '+':
             return make_token(TOKEN_PLUS);
         case '-':
@@ -101,6 +133,9 @@ static Token next_token() {
     
     if (isdigit(c)) {
         return read_int();
+    }
+    else {
+        return read_keyword();
     }
 
     return make_error_token("unexpected character");
@@ -136,6 +171,7 @@ const char* token_as_cstr(TokenType type) {
 
         "(",
         ")",
+        ";",
 
         "+",
         "-",
@@ -143,7 +179,9 @@ const char* token_as_cstr(TokenType type) {
         "/",
 
         "INT_LITERAL",
-        
+
+        "print",
+
         "ERROR",
     };
 

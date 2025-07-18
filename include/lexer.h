@@ -5,6 +5,7 @@ typedef enum TokenType {
 
     TOKEN_LEFT_PAREN,   // (
     TOKEN_RIGHT_PAREN,  // )
+    TOKEN_SEMICOLON,    // ;
 
     TOKEN_PLUS,         // +
     TOKEN_MINUS,        // -
@@ -12,6 +13,8 @@ typedef enum TokenType {
     TOKEN_SLASH,        // /
 
     TOKEN_INT_LITERAL,  // 0
+
+    TOKEN_PRINT,        // print
 
     TOKEN_ERROR,        // ERROR
 } TokenType;
