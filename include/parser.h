@@ -13,6 +13,7 @@ typedef enum ASTNodeType {
     AST_NODE_BINARY,
     AST_NODE_UNARY,
     AST_NODE_LITERAL,
+    AST_NODE_VARIABLE,
 } ASTNodeType;
 
 typedef struct ASTNode {
@@ -27,6 +28,8 @@ typedef struct ASTNode {
 
         struct ASTNode* expression;
 
+        char* name;
+
         struct {
             struct ASTNode* condition;
             struct ASTNode* then_branch;
@@ -37,6 +40,11 @@ typedef struct ASTNode {
             struct ASTNode* condition;
             struct ASTNode* body;
         } while_statement;
+
+        struct {
+            char* name;
+            struct ASTNode* value;
+        } assignment;
 
         struct {
             struct ASTNode* left;

@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "lexer.h"
 #include "memory.h"
 #include "parser.h"
@@ -117,6 +118,13 @@ static ASTNode* make_node_literal(int value) {
     return node;
 }
 
+static ASTNode* make_node_variable(char* name) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_VARIABLE;
+    node->name = name;
+    return node;
+}
+
 static ASTNode* parse_program();
 static ASTNode* parse_statement();
 static ASTNode* parse_print_statement();
@@ -148,17 +156,11 @@ static ASTNode* parse_program() {
 }
 
 static ASTNode* parse_statement() {
-    if (match(1, TOKEN_PRINT)) {
-        return parse_print_statement();
-    }
+    if (match(1, TOKEN_PRINT)) return parse_print_statement();
 
-    if (match(1, TOKEN_IF)) {
-        return parse_if_statement();
-    }
+    if (match(1, TOKEN_IF)) return parse_if_statement();
 
-    if (match(1, TOKEN_WHILE)) {
-        return parse_while_statement();
-    }
+    if (match(1, TOKEN_WHILE)) return parse_while_statement();
 
     if (match(1, TOKEN_LEFT_BRACE)) {
         ASTNode* block = parse_block();
@@ -294,6 +296,10 @@ static ASTNode* parse_primary() {
         int value = strtol(previous()->value, NULL, 10);
         return make_node_literal(value);
     }
+    if (match(1, TOKEN_IDENTIFIER)) {
+        char* name = strndup(previous()->value, previous()->length);
+        return make_node_variable(name);
+    }
     if (match(1, TOKEN_LEFT_PAREN)) {
         ASTNode* inside = parse_expression();
         consume_expected(TOKEN_RIGHT_PAREN, "expected closing parenthesis");
@@ -358,6 +364,9 @@ void parser_free_ast(ASTNode* root) {
             free(root->binary.right);
         } break;
         case AST_NODE_LITERAL: break;
+        case AST_NODE_VARIABLE: {
+            free(root->name);
+        } break;
         default: {
             fprintf(stderr, "parser::parser_free_ast: unknown AST node type with value: %d\n", root->type);
             exit(1);

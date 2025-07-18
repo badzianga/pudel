@@ -90,6 +90,9 @@ void debug_print_ast(ASTNode* root, int indent) {
         case AST_NODE_LITERAL: {
             printf("Literal: %d\n", root->literal);
         } break;
+        case AST_NODE_VARIABLE: {
+            printf("Variable: %s\n", root->name);
+        } break;
         default: {
             fprintf(stderr, "debug::debug_print_ast: uknown AST node type with value: %d\n", root->type);
             exit(1);

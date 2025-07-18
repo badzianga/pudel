@@ -26,6 +26,7 @@ typedef enum TokenType {
     TOKEN_BIT_OR,         // |
     TOKEN_LOGICAL_OR,     // ||
 
+    TOKEN_IDENTIFIER,     // x
     TOKEN_INT_LITERAL,    // 0
 
     TOKEN_PRINT,          // print

@@ -113,6 +113,7 @@ int interpreter_interpret(ASTNode* root) {
                 "interpreter::interpreter_interpret: unknown AST node type with value: %d\n",
                 root->type
             );
+            exit(1);
         } break;
     }
     return 0;

@@ -80,8 +80,8 @@ static Token read_int() {
     return make_token(TOKEN_INT_LITERAL);
 }
 
-static Token read_keyword() {
-    while (isalpha(peek())) {
+static Token read_identifier() {
+    while (isalnum(peek()) || peek() == '_') {
         advance();
     }
 
@@ -111,13 +111,13 @@ static Token read_keyword() {
             return make_token(TOKEN_PRINT + i);
         }
     }
-    return make_error_token("identifiers are not supported yet");
+    return make_token(TOKEN_IDENTIFIER);
 }
 
 static Token next_token() {
     skip_whitespace();
     lexer.start = lexer.current;
-    
+
     if (is_at_end()) {
         return make_token(TOKEN_EOF);
     }
@@ -157,13 +157,9 @@ static Token next_token() {
         default:
             break;
     }
-    
-    if (isdigit(c)) {
-        return read_int();
-    }
-    else {
-        return read_keyword();
-    }
+
+    if (isdigit(c)) return read_int();
+    else if (isalpha(c) || c == '_') return read_identifier();
 
     return make_error_token("unexpected character");
 }
@@ -219,6 +215,7 @@ const char* token_as_cstr(TokenType type) {
         "|",
         "||",
 
+        "IDENTIFIER",
         "INT_LITERAL",
 
         "print",
