@@ -80,19 +80,19 @@ int interpreter_interpret(ASTNode* root) {
             int value = interpreter_interpret(root->assignment.value);
             switch(root->assignment.op) {
                 case TOKEN_PLUS_EQUAL: {
-                    INTERPRET_ASSIGNMENT(var, +=, value);
+                    return INTERPRET_ASSIGNMENT(var, +=, value);
                 } break;
                 case TOKEN_MINUS_EQUAL: {
-                    INTERPRET_ASSIGNMENT(var, -=, value);
+                    return INTERPRET_ASSIGNMENT(var, -=, value);
                 } break;
                 case TOKEN_ASTERISK_EQUAL: {
-                    INTERPRET_ASSIGNMENT(var, *=, value);
+                    return INTERPRET_ASSIGNMENT(var, *=, value);
                 } break;
                 case TOKEN_SLASH_EQUAL: {
-                    INTERPRET_ASSIGNMENT(var, /=, value);
+                    return INTERPRET_ASSIGNMENT(var, /=, value);
                 } break;
                 case TOKEN_EQUAL: {
-                    INTERPRET_ASSIGNMENT(var, =, value);
+                    return INTERPRET_ASSIGNMENT(var, =, value);
                 } break;
                 default: {
                     fprintf(
