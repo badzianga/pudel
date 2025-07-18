@@ -30,7 +30,15 @@ int interpreter_interpret(ASTNode* root) {
                 case TOKEN_PLUS:          return INTERPRET_BINARY(root, +);
                 case TOKEN_MINUS:         return INTERPRET_BINARY(root, -);
                 case TOKEN_ASTERISK:      return INTERPRET_BINARY(root, *);
-                case TOKEN_SLASH:         return INTERPRET_BINARY(root, /);
+                case TOKEN_SLASH: {
+                    int left = interpreter_interpret((root)->binary.left);
+                    int right = interpreter_interpret((root)->binary.right);
+                    if (right == 0) {
+                        fprintf(stderr, "error: division by zero\n");
+                        exit(1);
+                    }
+                    return left / right;
+                }
                 case TOKEN_EQUAL_EQUAL:   return INTERPRET_BINARY(root, ==);
                 case TOKEN_NOT_EQUAL:     return INTERPRET_BINARY(root, !=);
                 case TOKEN_GREATER:       return INTERPRET_BINARY(root, >);
