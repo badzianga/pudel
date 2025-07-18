@@ -29,9 +29,7 @@ void debug_print_token_array(TokenArray* token_array) {
 }
 
 void debug_print_ast(ASTNode* root, int indent) {
-    for (int i = 0; i < indent; ++i) {
-        printf("  ");
-    }
+    for (int i = 0; i < indent; ++i) printf("  ");
 
     switch (root->type) {
         case AST_NODE_PROGRAM: {
@@ -47,6 +45,18 @@ void debug_print_ast(ASTNode* root, int indent) {
         case AST_NODE_PRINT_STATEMENT: {
             printf("Print:\n");
             debug_print_ast(root->expression, indent + 1);
+        } break;
+        case AST_NODE_IF_STATEMENT: {
+            printf("If:\n");
+            debug_print_ast(root->if_statement.condition, indent + 1);
+            for (int i = 0; i < indent; ++i) printf("  ");
+            printf("Then:\n");
+            debug_print_ast(root->if_statement.then_branch, indent + 1);
+            if (root->if_statement.else_branch != NULL) {
+                for (int i = 0; i < indent; ++i) printf("  ");
+                printf("Else:\n");
+                debug_print_ast(root->if_statement.else_branch, indent + 1);
+            }
         } break;
         case AST_NODE_BLOCK: {
             printf("Block:\n");

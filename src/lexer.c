@@ -87,6 +87,8 @@ static Token read_keyword() {
 
     static const char* keywords[] = {
         "print",
+        "if",
+        "else",
     };
     const int keywords_amount = sizeof(keywords) / sizeof(keywords[0]);
 
@@ -210,6 +212,8 @@ const char* token_as_cstr(TokenType type) {
         "INT_LITERAL",
 
         "print",
+        "if",
+        "else",
 
         "ERROR",
     };

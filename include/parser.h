@@ -5,6 +5,7 @@ typedef enum ASTNodeType {
     AST_NODE_PROGRAM,
     AST_NODE_EXPRESSION_STATEMENT,
     AST_NODE_PRINT_STATEMENT,
+    AST_NODE_IF_STATEMENT,
     AST_NODE_BLOCK,
 
     AST_NODE_BINARY,
@@ -23,6 +24,12 @@ typedef struct ASTNode {
         } scope;
 
         struct ASTNode* expression;
+
+        struct {
+            struct ASTNode* condition;
+            struct ASTNode* then_branch;
+            struct ASTNode* else_branch;
+        } if_statement;
 
         struct {
             struct ASTNode* left;

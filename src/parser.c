@@ -61,6 +61,15 @@ static ASTNode* make_node_print_statement(ASTNode* expression) {
     return node;
 }
 
+static ASTNode* make_node_if_statement(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_IF_STATEMENT;
+    node->if_statement.condition = condition;
+    node->if_statement.then_branch = then_branch;
+    node->if_statement.else_branch = else_branch;
+    return node;
+}
+
 static ASTNode* make_node_block() {
     ASTNode* node = calloc(1, sizeof(ASTNode));
     node->type = AST_NODE_BLOCK;
@@ -94,6 +103,7 @@ static ASTNode* make_node_literal(int value) {
 static ASTNode* parse_program();
 static ASTNode* parse_statement();
 static ASTNode* parse_print_statement();
+static ASTNode* parse_if_statement();
 static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
@@ -118,14 +128,18 @@ static ASTNode* parse_program() {
 }
 
 static ASTNode* parse_statement() {
+    if (match(1, TOKEN_PRINT)) {
+        return parse_print_statement();
+    }
+
+    if (match(1, TOKEN_IF)) {
+        return parse_if_statement();
+    }
+
     if (match(1, TOKEN_LEFT_BRACE)) {
         ASTNode* block = parse_block();
         consume_expected(TOKEN_RIGHT_BRACE, "expected '}' after block");
         return block;
-    }
-
-    if (match(1, TOKEN_PRINT)) {
-        return parse_print_statement();
     }
 
     ASTNode* expression = parse_expression();
@@ -137,6 +151,20 @@ static ASTNode* parse_print_statement() {
     ASTNode* expression = parse_expression();
     consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
     return make_node_print_statement(expression);
+}
+
+static ASTNode* parse_if_statement() {
+    consume_expected(TOKEN_LEFT_PAREN, "expected '(' after 'if'");
+    ASTNode* condition = parse_expression();
+    consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after 'if' condition");
+
+    ASTNode* then_branch = parse_statement();
+    ASTNode* else_branch = NULL;
+    if (match(1, TOKEN_ELSE)) {
+        else_branch = parse_statement();
+    }
+
+    return make_node_if_statement(condition, then_branch, else_branch);
 }
 
 static ASTNode* parse_block() {
@@ -248,6 +276,11 @@ void parser_free_ast(ASTNode* root) {
         } break;
         case AST_NODE_PRINT_STATEMENT: {
             free(root->expression);
+        } break;
+        case AST_NODE_IF_STATEMENT: {
+            free(root->if_statement.condition);
+            free(root->if_statement.then_branch);
+            free(root->if_statement.else_branch);
         } break;
         case AST_NODE_BLOCK: {
             for (int i = 0; i < root->scope.count; ++i) {

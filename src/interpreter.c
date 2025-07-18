@@ -20,6 +20,14 @@ int interpreter_interpret(ASTNode* root) {
         case AST_NODE_PRINT_STATEMENT: {
             printf("%d\n", interpreter_interpret(root->expression));
         } break;
+        case AST_NODE_IF_STATEMENT: {
+            if (interpreter_interpret(root->if_statement.condition)) {
+                interpreter_interpret(root->if_statement.then_branch);
+            }
+            else if (root->if_statement.else_branch != NULL) {
+                interpreter_interpret(root->if_statement.else_branch);
+            }
+        } break;
         case AST_NODE_BLOCK: {
             for (int i = 0; i < root->scope.count; ++i) {
                 interpreter_interpret(root->scope.statements[i]);
