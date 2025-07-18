@@ -15,15 +15,15 @@ typedef struct Lexer {
 
 static Lexer lexer;
 
-static bool lexer_is_at_end() {
+static bool is_at_end() {
     return *lexer.current == '\0';
 }
 
-static char lexer_peek() {
+static char peek() {
     return *lexer.current;
 }
 
-static char lexer_advance() {
+static char advance() {
     if (*lexer.current == '\n') {
         lexer.line++;
     }
@@ -31,7 +31,7 @@ static char lexer_advance() {
 }
 
 // TODO: EOF token is not created when newline is not present at the end
-static Token lexer_make_token(TokenType type) {
+static Token make_token(TokenType type) {
     return (Token) {
         .type = type,
         .value = lexer.start,
@@ -40,7 +40,7 @@ static Token lexer_make_token(TokenType type) {
     };
 }
 
-static Token lexer_make_error_token(const char* message) {
+static Token make_error_token(const char* message) {
     return (Token) {
         .type = TOKEN_ERROR,
         .value = message,
@@ -49,15 +49,15 @@ static Token lexer_make_error_token(const char* message) {
     };
 }
 
-static void lexer_skip_whitespace() {
+static void skip_whitespace() {
     for (;;) {
-        char c = lexer_peek();
+        char c = peek();
         switch (c) {
             case ' ':
             case '\t':
             case '\r':
             case '\n':
-                lexer_advance();
+                advance();
                 break;
             default:
                 return;
@@ -66,44 +66,44 @@ static void lexer_skip_whitespace() {
     }
 }
 
-static Token lexer_read_int() {
-    while (isdigit(lexer_peek())) {
-        lexer_advance();
+static Token read_int() {
+    while (isdigit(peek())) {
+        advance();
     }
-    return lexer_make_token(TOKEN_INT_LITERAL);
+    return make_token(TOKEN_INT_LITERAL);
 }
 
-static Token lexer_next_token() {
-    lexer_skip_whitespace();
+static Token next_token() {
+    skip_whitespace();
     lexer.start = lexer.current;
     
-    if (lexer_is_at_end()) {
-        return lexer_make_token(TOKEN_EOF);
+    if (is_at_end()) {
+        return make_token(TOKEN_EOF);
     }
 
-    char c = lexer_advance();
+    char c = advance();
     switch (c) {
         case '(':
-            return lexer_make_token(TOKEN_LEFT_PAREN);
+            return make_token(TOKEN_LEFT_PAREN);
         case ')':
-            return lexer_make_token(TOKEN_RIGHT_PAREN);
+            return make_token(TOKEN_RIGHT_PAREN);
         case '+':
-            return lexer_make_token(TOKEN_PLUS);
+            return make_token(TOKEN_PLUS);
         case '-':
-            return lexer_make_token(TOKEN_MINUS);
+            return make_token(TOKEN_MINUS);
         case '*':
-            return lexer_make_token(TOKEN_ASTERISK);
+            return make_token(TOKEN_ASTERISK);
         case '/':
-            return lexer_make_token(TOKEN_SLASH);
+            return make_token(TOKEN_SLASH);
         default:
             break;
     }
     
     if (isdigit(c)) {
-        return lexer_read_int();
+        return read_int();
     }
 
-    return lexer_make_error_token("unexpected character");
+    return make_error_token("unexpected character");
 }
 
 TokenArray lexer_lex(const char* source) {
@@ -113,13 +113,13 @@ TokenArray lexer_lex(const char* source) {
 
     TokenArray array = { 0 };
 
-    while (!lexer_is_at_end()) {
+    while (!is_at_end()) {
         if (array.capacity < array.count + 1) {
             int old_capacity = array.capacity;
             array.capacity = GROW_CAPACITY(old_capacity);
             array.tokens = GROW_ARRAY(Token, array.tokens, old_capacity, array.capacity);
         }
-        array.tokens[array.count++] = lexer_next_token();
+        array.tokens[array.count++] = next_token();
     }
     return array;
 }
