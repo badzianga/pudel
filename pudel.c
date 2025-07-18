@@ -6,8 +6,12 @@
 #include "lexer.h"
 #include "parser.h"
 
-int main() {
-    char* source = file_read("examples/all_features.pud");
+int main(int argc, char** argv) {
+    if (argc != 2) {
+        fprintf(stderr, "usage: %s <input.pud>\n", argv[0]);
+        exit(1);
+    }
+    char* source = file_read(argv[1]);
 
     TokenArray token_array = lexer_lex(source);
     debug_print_token_array(&token_array);
