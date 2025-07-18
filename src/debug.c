@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "debug.h"
 #include "lexer.h"
+#include "parser.h"
 
 void debug_print_token_array(TokenArray* token_array) {
     const Token* end = token_array->tokens + token_array->count;
@@ -23,5 +25,30 @@ void debug_print_token_array(TokenArray* token_array) {
                 token_as_cstr(type)
             );
         }
+    }
+}
+
+void debug_print_ast(ASTNode* root, int indent) {
+    for (int i = 0; i < indent; ++i) {
+        printf("  ");
+    }
+
+    switch (root->type) {
+        case AST_NODE_BINARY: {
+            printf("Binary: %s\n", token_as_cstr(root->binary.op));
+            debug_print_ast(root->binary.left, indent + 1);
+            debug_print_ast(root->binary.right, indent + 1);
+        } break;
+        case AST_NODE_UNARY: {
+            printf("Unary: %s\n", token_as_cstr(root->unary.op));
+            debug_print_ast(root->unary.right, indent + 1);
+        } break;
+        case AST_NODE_LITERAL: {
+            printf("Literal: %d\n", root->literal);
+        } break;
+        default: {
+            fprintf(stderr, "debug::debug_print_ast: uknown AST node type with value: %d\n", root->type);
+            exit(1);
+        } break;
     }
 }
