@@ -103,7 +103,7 @@ static Token lexer_next_token() {
         return lexer_read_int();
     }
 
-    return lexer_make_error_token("Unexpected character");
+    return lexer_make_error_token("unexpected character");
 }
 
 TokenArray lexer_lex(const char* source) {

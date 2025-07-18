@@ -115,7 +115,13 @@ static ASTNode* parse_primary() {
         consume_expected(TOKEN_RIGHT_PAREN, "expected closing parenthesis");
         return inside;
     }
-    fprintf(stderr, "error: unexpected value: '%.*s'\n", parser.current->length, parser.current->value);
+
+    if (parser.current->type == TOKEN_ERROR) {
+        fprintf(stderr, "error: %.*s\n", parser.current->length, parser.current->value);
+    }
+    else {
+        fprintf(stderr, "error: unexpected value: '%.*s'\n", parser.current->length, parser.current->value);
+    }
     exit(1);
 }
 
