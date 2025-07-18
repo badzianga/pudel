@@ -147,10 +147,11 @@ const char* token_as_cstr(TokenType type) {
         "ERROR",
     };
 
-    if (sizeof(token_strings) / sizeof(token_strings[0]) != TOKEN_ERROR + 1) {
-        fprintf(stderr, "lexer::token_as_cstr: not all token types are handled\n");
-        exit(1);
-    }
+    static_assert(
+        sizeof(token_strings) / sizeof(token_strings[0]) == TOKEN_ERROR + 1,
+        "lexer::token_as_cstr: not all token types are handled"
+    );
+
     if (type < 0 || type > TOKEN_ERROR) {
         fprintf(stderr, "lexer::token_as_cstr: unknown token type with value: %d\n", type);
         exit(1);
