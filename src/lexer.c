@@ -30,6 +30,13 @@ static char advance() {
     return *lexer.current++;
 }
 
+static bool advance_if(char expected) {
+    if (is_at_end()) return false;
+    if (*lexer.current != expected) return false;
+    ++lexer.current;
+    return true;
+}
+
 // TODO: EOF token is not created when newline is not present at the end
 static Token make_token(TokenType type) {
     return (Token) {
@@ -131,6 +138,14 @@ static Token next_token() {
             return make_token(TOKEN_ASTERISK);
         case '/':
             return make_token(TOKEN_SLASH);
+        case '=':
+            return advance_if('=') ? make_token(TOKEN_EQUAL_EQUAL) : make_token(TOKEN_EQUAL);
+        case '!':
+            return advance_if('=') ? make_token(TOKEN_NOT_EQUAL) : make_token(TOKEN_NOT);
+        case '>':
+            return advance_if('=') ? make_token(TOKEN_GREATER_EQUAL) : make_token(TOKEN_GREATER);
+        case '<':
+            return advance_if('=') ? make_token(TOKEN_LESS_EQUAL) : make_token(TOKEN_LESS);
         default:
             break;
     }
@@ -183,6 +198,14 @@ const char* token_as_cstr(TokenType type) {
         "-",
         "*",
         "/",
+        "=",
+        "==",
+        "!",
+        "!=",
+        ">",
+        ">=",
+        "<",
+        "<=",
 
         "INT_LITERAL",
 

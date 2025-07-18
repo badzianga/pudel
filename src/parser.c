@@ -97,6 +97,8 @@ static ASTNode* parse_print_statement();
 static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
+static ASTNode* parse_equality();
+static ASTNode* parse_comparison();
 static ASTNode* parse_term();
 static ASTNode* parse_factor();
 static ASTNode* parse_unary();
@@ -151,7 +153,27 @@ static ASTNode* parse_block() {
 }
 
 static ASTNode* parse_expression() {
-    return parse_term();
+    return parse_equality();
+}
+
+static ASTNode* parse_equality() {
+    ASTNode* left = parse_comparison();
+    while (match(2, TOKEN_EQUAL_EQUAL, TOKEN_NOT_EQUAL)) {
+        TokenType op = previous()->type;
+        ASTNode* right = parse_comparison();
+        left = make_node_binary(left, op, right);
+    }
+    return left;
+}
+
+static ASTNode* parse_comparison() {
+    ASTNode* left = parse_term();
+    while (match(4, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_LESS, TOKEN_LESS_EQUAL)) {
+        TokenType op = previous()->type;
+        ASTNode* right = parse_term();
+        left = make_node_binary(left, op, right);
+    }
+    return left;
 }
 
 static ASTNode* parse_term() {
@@ -177,7 +199,7 @@ static ASTNode* parse_factor() {
 }
 
 static ASTNode* parse_unary() {
-    if (match(1, TOKEN_MINUS)) {
+    if (match(2, TOKEN_MINUS, TOKEN_NOT)) {
         TokenType op = previous()->type;
         ASTNode* right = parse_primary();
         return make_node_unary(op, right);

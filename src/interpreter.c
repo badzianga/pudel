@@ -27,10 +27,16 @@ int interpreter_interpret(ASTNode* root) {
         } break;
         case AST_NODE_BINARY: {
             switch (root->binary.op) {
-                case TOKEN_PLUS:     return INTERPRET_BINARY(root, +);
-                case TOKEN_MINUS:    return INTERPRET_BINARY(root, -);
-                case TOKEN_ASTERISK: return INTERPRET_BINARY(root, *);
-                case TOKEN_SLASH:    return INTERPRET_BINARY(root, /);
+                case TOKEN_PLUS:          return INTERPRET_BINARY(root, +);
+                case TOKEN_MINUS:         return INTERPRET_BINARY(root, -);
+                case TOKEN_ASTERISK:      return INTERPRET_BINARY(root, *);
+                case TOKEN_SLASH:         return INTERPRET_BINARY(root, /);
+                case TOKEN_EQUAL_EQUAL:   return INTERPRET_BINARY(root, ==);
+                case TOKEN_NOT_EQUAL:     return INTERPRET_BINARY(root, !=);
+                case TOKEN_GREATER:       return INTERPRET_BINARY(root, >);
+                case TOKEN_GREATER_EQUAL: return INTERPRET_BINARY(root, >=);
+                case TOKEN_LESS:          return INTERPRET_BINARY(root, <);
+                case TOKEN_LESS_EQUAL:    return INTERPRET_BINARY(root, <=);
                 default: {
                     fprintf(
                         stderr,
@@ -44,6 +50,7 @@ int interpreter_interpret(ASTNode* root) {
         case AST_NODE_UNARY: {
             switch (root->unary.op) {
                 case TOKEN_MINUS: return INTERPRET_UNARY(root, -);
+                case TOKEN_NOT:   return INTERPRET_UNARY(root, !);
                 default: {
                     fprintf(
                         stderr,

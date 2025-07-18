@@ -1,24 +1,32 @@
 #pragma once
 
 typedef enum TokenType {
-    TOKEN_EOF,          // EOF
+    TOKEN_EOF,            // EOF
 
-    TOKEN_LEFT_PAREN,   // (
-    TOKEN_RIGHT_PAREN,  // )
-    TOKEN_LEFT_BRACE,   // {
-    TOKEN_RIGHT_BRACE,  // }
-    TOKEN_SEMICOLON,    // ;
+    TOKEN_LEFT_PAREN,     // (
+    TOKEN_RIGHT_PAREN,    // )
+    TOKEN_LEFT_BRACE,     // {
+    TOKEN_RIGHT_BRACE,    // }
+    TOKEN_SEMICOLON,      // ;
 
-    TOKEN_PLUS,         // +
-    TOKEN_MINUS,        // -
-    TOKEN_ASTERISK,     // *
-    TOKEN_SLASH,        // /
+    TOKEN_PLUS,           // +
+    TOKEN_MINUS,          // -
+    TOKEN_ASTERISK,       // *
+    TOKEN_SLASH,          // /
+    TOKEN_EQUAL,          // =
+    TOKEN_EQUAL_EQUAL,    // ==
+    TOKEN_NOT,            // !
+    TOKEN_NOT_EQUAL,      // !=
+    TOKEN_GREATER,        // >
+    TOKEN_GREATER_EQUAL,  // >=
+    TOKEN_LESS,           // <
+    TOKEN_LESS_EQUAL,     // <=
 
-    TOKEN_INT_LITERAL,  // 0
+    TOKEN_INT_LITERAL,    // 0
 
-    TOKEN_PRINT,        // print
+    TOKEN_PRINT,          // print
 
-    TOKEN_ERROR,        // ERROR
+    TOKEN_ERROR,          // ERROR
 } TokenType;
 
 typedef struct Token {
