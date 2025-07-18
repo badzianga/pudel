@@ -13,7 +13,7 @@ typedef struct Variable {
     int value;
 } Variable;
 
-static Variable variables[128];
+static Variable variables[128] = { 0 };
 static int variable_count = 0;
 
 static Variable* get_variable(char* name) {
@@ -32,6 +32,17 @@ int interpreter_interpret(ASTNode* root) {
             for (int i = 0; i < root->scope.count; ++i) {
                 interpreter_interpret(root->scope.statements[i]);
             }
+        } break;
+        case AST_NODE_VARIABLE_DECLARATION: {
+            if (get_variable(root->assignment.name) != NULL) {
+                fprintf(stderr, "error: redefinition of variable '%s'\n", root->assignment.name);
+                exit(1);
+            }
+            int value = 0;
+            if (root->assignment.value != NULL) {
+                value = interpreter_interpret(root->assignment.value);
+            }
+            variables[variable_count++] = (Variable) { root->assignment.name, value };
         } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             interpreter_interpret(root->expression);
@@ -58,6 +69,15 @@ int interpreter_interpret(ASTNode* root) {
             for (int i = 0; i < root->scope.count; ++i) {
                 interpreter_interpret(root->scope.statements[i]);
             }
+        } break;
+        case AST_NODE_ASSIGNMENT: {
+            Variable* var = get_variable(root->assignment.name);
+            if (var == NULL) {
+                fprintf(stderr, "error: undeclared identifier '%s'\n", root->assignment.name);
+                exit(1);
+            }
+            int value = interpreter_interpret(root->assignment.value);
+            var->value = value;
         } break;
         case AST_NODE_LOGICAL: {
             int left = interpreter_interpret(root->binary.left);

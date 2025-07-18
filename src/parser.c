@@ -48,6 +48,14 @@ static ASTNode* make_node_program() {
     return node;
 }
 
+static ASTNode* make_node_variable_declaration(char* name, ASTNode* initializer) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_VARIABLE_DECLARATION;
+    node->assignment.name = name;
+    node->assignment.value = initializer;
+    return node;
+}
+
 static ASTNode* make_node_expression_statement(ASTNode* expression) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_EXPRESSION_STATEMENT;
@@ -82,6 +90,14 @@ static ASTNode* make_node_while_statement(ASTNode* condition, ASTNode* body) {
 static ASTNode* make_node_block() {
     ASTNode* node = calloc(1, sizeof(ASTNode));
     node->type = AST_NODE_BLOCK;
+    return node;
+}
+
+static ASTNode* make_node_assignment(char* name, ASTNode* value) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_ASSIGNMENT;
+    node->assignment.name = name;
+    node->assignment.value = value;
     return node;
 }
 
@@ -126,6 +142,8 @@ static ASTNode* make_node_variable(char* name) {
 }
 
 static ASTNode* parse_program();
+static ASTNode* parse_declaration();
+static ASTNode* parse_variable_declaration();
 static ASTNode* parse_statement();
 static ASTNode* parse_print_statement();
 static ASTNode* parse_if_statement();
@@ -133,6 +151,7 @@ static ASTNode* parse_while_statement();
 static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
+static ASTNode* parse_assignment();
 static ASTNode* parse_logical_or();
 static ASTNode* parse_logical_and();
 static ASTNode* parse_equality();
@@ -150,9 +169,29 @@ static ASTNode* parse_program() {
             node->scope.capacity = GROW_CAPACITY(old_capacity);
             node->scope.statements = GROW_ARRAY(ASTNode*, node->scope.statements, old_capacity, node->scope.capacity);
         }
-        node->scope.statements[node->scope.count++] = parse_statement();
+        node->scope.statements[node->scope.count++] = parse_declaration();
     }
     return node;
+}
+
+static ASTNode* parse_declaration() {
+    if (match(1, TOKEN_INT)) {
+        return parse_variable_declaration();
+    }
+    return parse_statement();
+}
+
+static ASTNode* parse_variable_declaration() {
+    consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
+    char* name = strndup(previous()->value, previous()->length);
+
+    ASTNode* initializer = NULL;
+    if (match(1, TOKEN_EQUAL)) {
+        initializer = parse_expression();
+    }
+
+    consume_expected(TOKEN_SEMICOLON, "expected ';' after variable declaration");
+    return make_node_variable_declaration(name, initializer);
 }
 
 static ASTNode* parse_statement() {
@@ -219,7 +258,23 @@ static ASTNode* parse_block() {
 }
 
 static ASTNode* parse_expression() {
-    return parse_logical_or();
+    return parse_assignment();
+}
+
+static ASTNode* parse_assignment() {
+    ASTNode* expression = parse_logical_or();
+
+    if (match(1, TOKEN_EQUAL)) {
+        ASTNode* value = parse_assignment();
+        
+        if (expression->type == AST_NODE_VARIABLE) {
+            return make_node_assignment(expression->name, value);
+        }
+
+        fprintf(stderr, "error: invalid assignment target\n");
+    }
+
+    return expression;
 }
 
 static ASTNode* parse_logical_or() {
@@ -331,6 +386,10 @@ void parser_free_ast(ASTNode* root) {
             }
             free(root->scope.statements);
         } break;
+        case AST_NODE_VARIABLE_DECLARATION: {
+            free(root->assignment.name);
+            free(root->assignment.value);
+        } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             free(root->expression);
         } break;
@@ -351,6 +410,10 @@ void parser_free_ast(ASTNode* root) {
                 free(root->scope.statements[i]);
             }
             free(root->scope.statements);
+        } break;
+        case AST_NODE_ASSIGNMENT: {
+            free(root->assignment.name);
+            free(root->assignment.value);
         } break;
         case AST_NODE_LOGICAL: {
             free(root->binary.left);

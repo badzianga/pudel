@@ -3,12 +3,14 @@
 
 typedef enum ASTNodeType {
     AST_NODE_PROGRAM,
+    AST_NODE_VARIABLE_DECLARATION,
     AST_NODE_EXPRESSION_STATEMENT,
     AST_NODE_PRINT_STATEMENT,
     AST_NODE_IF_STATEMENT,
     AST_NODE_WHILE_STATEMENT,
     AST_NODE_BLOCK,
 
+    AST_NODE_ASSIGNMENT,
     AST_NODE_LOGICAL,
     AST_NODE_BINARY,
     AST_NODE_UNARY,
@@ -20,44 +22,53 @@ typedef struct ASTNode {
     ASTNodeType type;
 
     union {
+        // program, block
         struct {
             struct ASTNode** statements;
             int count;
             int capacity;
         } scope;
 
+        // var decl, assignment
+        struct {
+            char* name;
+            struct ASTNode* value;
+        } assignment;
+
+        // expr stmt
         struct ASTNode* expression;
 
-        char* name;
-
+        // if
         struct {
             struct ASTNode* condition;
             struct ASTNode* then_branch;
             struct ASTNode* else_branch;
         } if_statement;
 
+        // while
         struct {
             struct ASTNode* condition;
             struct ASTNode* body;
         } while_statement;
 
-        struct {
-            char* name;
-            struct ASTNode* value;
-        } assignment;
-
+        // logical, binary
         struct {
             struct ASTNode* left;
             TokenType op;
             struct ASTNode* right;
         } binary;
 
+        // unary
         struct {
             TokenType op;
             struct ASTNode* right;
         } unary;
 
+        // literal
         int literal;
+
+        // var
+        char* name;
     };
 } ASTNode;
 

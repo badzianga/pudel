@@ -29,6 +29,7 @@ typedef enum TokenType {
     TOKEN_IDENTIFIER,     // x
     TOKEN_INT_LITERAL,    // 0
 
+    TOKEN_INT,            // int
     TOKEN_PRINT,          // print
     TOKEN_IF,             // if
     TOKEN_ELSE,           // else

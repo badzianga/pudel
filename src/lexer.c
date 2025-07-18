@@ -86,6 +86,7 @@ static Token read_identifier() {
     }
 
     static const char* keywords[] = {
+        "int",
         "print",
         "if",
         "else",
@@ -108,7 +109,7 @@ static Token read_identifier() {
             }
         }
         if (might_be_keyword) {
-            return make_token(TOKEN_PRINT + i);
+            return make_token(TOKEN_INT + i);
         }
     }
     return make_token(TOKEN_IDENTIFIER);
@@ -218,6 +219,7 @@ const char* token_as_cstr(TokenType type) {
         "IDENTIFIER",
         "INT_LITERAL",
 
+        "int",
         "print",
         "if",
         "else",

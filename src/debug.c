@@ -38,6 +38,12 @@ void debug_print_ast(ASTNode* root, int indent) {
                 debug_print_ast(root->scope.statements[i], indent + 1);
             }
         } break;
+        case AST_NODE_VARIABLE_DECLARATION: {
+            printf("VarDecl: %s\n", root->assignment.name);
+            if (root->assignment.value != NULL) {
+                debug_print_ast(root->assignment.value, indent + 1);
+            }
+        } break;
         case AST_NODE_EXPRESSION_STATEMENT: {
             printf("Expression:\n");
             debug_print_ast(root->expression, indent + 1);
@@ -72,6 +78,10 @@ void debug_print_ast(ASTNode* root, int indent) {
             for (int i = 0; i < root->scope.count; ++i) {
                 debug_print_ast(root->scope.statements[i], indent + 1);
             }
+        } break;
+        case AST_NODE_ASSIGNMENT: {
+            printf("Assignment: %s\n", root->assignment.name);
+            debug_print_ast(root->assignment.value, indent + 1);
         } break;
         case AST_NODE_LOGICAL: {
             printf("Logical: %s\n", token_as_cstr(root->binary.op));
