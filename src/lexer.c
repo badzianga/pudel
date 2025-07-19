@@ -147,6 +147,8 @@ static Token next_token() {
             return advance_if('=') ? make_token(TOKEN_ASTERISK_EQUAL) : make_token(TOKEN_ASTERISK);
         case '/':
             return advance_if('=') ? make_token(TOKEN_SLASH_EQUAL) : make_token(TOKEN_SLASH);
+        case '%':
+            return advance_if('=') ? make_token(TOKEN_PERCENT_EQUAL) : make_token(TOKEN_PERCENT);
         case '=':
             return advance_if('=') ? make_token(TOKEN_EQUAL_EQUAL) : make_token(TOKEN_EQUAL);
         case '!':
@@ -211,6 +213,8 @@ const char* token_as_cstr(TokenType type) {
         "*=",
         "/",
         "/=",
+        "\045",
+        "\045=",
         "=",
         "==",
         "!",

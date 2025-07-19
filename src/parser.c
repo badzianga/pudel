@@ -328,7 +328,7 @@ static ASTNode* parse_expression() {
 static ASTNode* parse_assignment() {
     ASTNode* expression = parse_logical_or();
 
-    if (match(5, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL)) {
+    if (match(6, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL, TOKEN_PERCENT_EQUAL)) {
         TokenType op = previous()->type;
         ASTNode* value = parse_assignment();
         
@@ -392,7 +392,7 @@ static ASTNode* parse_term() {
 
 static ASTNode* parse_factor() {
     ASTNode* left = parse_unary();
-    while (match(2, TOKEN_ASTERISK, TOKEN_SLASH)) {
+    while (match(3, TOKEN_ASTERISK, TOKEN_SLASH, TOKEN_PERCENT)) {
         TokenType op = previous()->type;
         ASTNode* right = parse_unary();
         left = make_node_binary(left, op, right);

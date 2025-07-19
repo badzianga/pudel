@@ -89,7 +89,18 @@ int interpreter_interpret(ASTNode* root) {
                     return INTERPRET_ASSIGNMENT(var, *=, value);
                 } break;
                 case TOKEN_SLASH_EQUAL: {
-                    return INTERPRET_ASSIGNMENT(var, /=, value);
+                    if (value == 0) {
+                        fprintf(stderr, "error: division by zero\n");
+                        exit(1);
+                    }
+                    return var->value /= value;
+                } break;
+                case TOKEN_PERCENT_EQUAL: {
+                    if (value == 0) {
+                        fprintf(stderr, "error: remainder by zero is undefined\n");
+                        exit(1);
+                    }
+                    return var->value %= value;
                 } break;
                 case TOKEN_EQUAL: {
                     return INTERPRET_ASSIGNMENT(var, =, value);
@@ -130,13 +141,22 @@ int interpreter_interpret(ASTNode* root) {
                 case TOKEN_MINUS:         return INTERPRET_BINARY(root, -);
                 case TOKEN_ASTERISK:      return INTERPRET_BINARY(root, *);
                 case TOKEN_SLASH: {
-                    int left = interpreter_interpret((root)->binary.left);
-                    int right = interpreter_interpret((root)->binary.right);
+                    int left = interpreter_interpret(root->binary.left);
+                    int right = interpreter_interpret(root->binary.right);
                     if (right == 0) {
                         fprintf(stderr, "error: division by zero\n");
                         exit(1);
                     }
                     return left / right;
+                }
+                case TOKEN_PERCENT: {
+                    int left = interpreter_interpret(root->binary.left);
+                    int right = interpreter_interpret(root->binary.right);
+                    if (right == 0) {
+                        fprintf(stderr, "error: remainder by zero is undefined\n");
+                        exit(1);
+                    }
+                    return left % right;
                 }
                 case TOKEN_EQUAL_EQUAL:   return INTERPRET_BINARY(root, ==);
                 case TOKEN_NOT_EQUAL:     return INTERPRET_BINARY(root, !=);

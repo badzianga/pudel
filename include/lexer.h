@@ -17,6 +17,8 @@ typedef enum TokenType {
     TOKEN_ASTERISK_EQUAL,  // *=
     TOKEN_SLASH,           // /
     TOKEN_SLASH_EQUAL,     // /=
+    TOKEN_PERCENT,         // %
+    TOKEN_PERCENT_EQUAL,   // %=
     TOKEN_EQUAL,           // =
     TOKEN_EQUAL_EQUAL,     // ==
     TOKEN_NOT,             // !
