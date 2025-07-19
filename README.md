@@ -32,10 +32,16 @@ Pudel currently runs only source files passed as command-line argument:
 
 ## Future improvements
 
+- Proper variable scopes
 - Additional data types: `bool`, `float`, `string`
 - User-defined functions
-- Internal functions
+- Native functions
 - Classes and basic object-oriented features
+- Hash maps for variables, functions and classes lookup
 - Interactive REPL
 - Improved error handling and diagnostics
 - `break` and `continue` in loops
+- Ternary operator
+- Multi-line comments
+- Multiple statements in one line, separated by `,`
+- Bitwise operators: `&`, `|`, `^`, `~` and their assignments
