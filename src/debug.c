@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "lexer.h"
 #include "parser.h"
+#include "value.h"
 
 void debug_print_token_array(TokenArray* token_array) {
     const Token* end = token_array->tokens + token_array->count;
@@ -39,9 +40,9 @@ void debug_print_ast(ASTNode* root, int indent) {
             }
         } break;
         case AST_NODE_VARIABLE_DECLARATION: {
-            printf("VarDecl: %s\n", root->assignment.name);
-            if (root->assignment.value != NULL) {
-                debug_print_ast(root->assignment.value, indent + 1);
+            printf("VarDecl: %s %s\n", value_type_as_cstr(root->variable_declaration.type), root->assignment.name);
+            if (root->variable_declaration.initializer != NULL) {
+                debug_print_ast(root->variable_declaration.initializer, indent + 1);
             }
         } break;
         case AST_NODE_EXPRESSION_STATEMENT: {

@@ -4,14 +4,15 @@
 #include "interpreter.h"
 #include "lexer.h"
 #include "parser.h"
+#include "value.h"
 
 #define INTERPRET_BINARY(node, op) interpreter_interpret((node)->binary.left) op interpreter_interpret((node)->binary.right)
 #define INTERPRET_UNARY(node, op) op interpreter_interpret((node)->unary.right)
-#define INTERPRET_ASSIGNMENT(var, op, val) (var)->value op val 
+#define INTERPRET_ASSIGNMENT(var, op, val) (var)->value.int_ op val 
 
 typedef struct Variable {
     char* name;
-    int value;
+    Value value;
 } Variable;
 
 static Variable variables[128] = { 0 };
@@ -93,14 +94,14 @@ int interpreter_interpret(ASTNode* root) {
                         fprintf(stderr, "error: division by zero\n");
                         exit(1);
                     }
-                    return var->value /= value;
+                    return var->value.int_ /= value;
                 } break;
                 case TOKEN_PERCENT_EQUAL: {
                     if (value == 0) {
                         fprintf(stderr, "error: remainder by zero is undefined\n");
                         exit(1);
                     }
-                    return var->value %= value;
+                    return var->value.int_ %= value;
                 } break;
                 case TOKEN_EQUAL: {
                     return INTERPRET_ASSIGNMENT(var, =, value);
@@ -197,7 +198,7 @@ int interpreter_interpret(ASTNode* root) {
                 fprintf(stderr, "error: undeclared identifier '%s'\n", root->name);
                 exit(1);
             }
-            return var->value;
+            return var->value.int_;
         } break;
         default: {
             fprintf(

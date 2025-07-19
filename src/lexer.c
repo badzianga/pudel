@@ -90,6 +90,7 @@ static Token read_identifier() {
     }
 
     static const char* keywords[] = {
+        "var",
         "int",
         "print",
         "if",
@@ -113,7 +114,7 @@ static Token read_identifier() {
             }
         }
         if (might_be_keyword) {
-            return make_token(TOKEN_INT + i);
+            return make_token(TOKEN_VAR + i);
         }
     }
     return make_token(TOKEN_IDENTIFIER);
@@ -149,6 +150,8 @@ static Token next_token() {
             return advance_if('=') ? make_token(TOKEN_SLASH_EQUAL) : make_token(TOKEN_SLASH);
         case '%':
             return advance_if('=') ? make_token(TOKEN_PERCENT_EQUAL) : make_token(TOKEN_PERCENT);
+        case ':':
+            return advance_if('=') ? make_token(TOKEN_COLON_EQUAL) : make_token(TOKEN_COLON);
         case '=':
             return advance_if('=') ? make_token(TOKEN_EQUAL_EQUAL) : make_token(TOKEN_EQUAL);
         case '!':
@@ -215,6 +218,8 @@ const char* token_as_cstr(TokenType type) {
         "/=",
         "\045",
         "\045=",
+        ":",
+        ":=",
         "=",
         "==",
         "!",
@@ -231,6 +236,7 @@ const char* token_as_cstr(TokenType type) {
         "IDENTIFIER",
         "INT_LITERAL",
 
+        "var",
         "int",
         "print",
         "if",

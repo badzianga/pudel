@@ -19,6 +19,8 @@ typedef enum TokenType {
     TOKEN_SLASH_EQUAL,     // /=
     TOKEN_PERCENT,         // %
     TOKEN_PERCENT_EQUAL,   // %=
+    TOKEN_COLON,           // :
+    TOKEN_COLON_EQUAL,     // :=
     TOKEN_EQUAL,           // =
     TOKEN_EQUAL_EQUAL,     // ==
     TOKEN_NOT,             // !
@@ -35,6 +37,7 @@ typedef enum TokenType {
     TOKEN_IDENTIFIER,      // x
     TOKEN_INT_LITERAL,     // 0
 
+    TOKEN_VAR,             // var
     TOKEN_INT,             // int
     TOKEN_PRINT,           // print
     TOKEN_IF,              // if

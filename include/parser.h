@@ -1,5 +1,6 @@
 #pragma once
 #include "lexer.h"
+#include "value.h"
 
 typedef enum ASTNodeType {
     AST_NODE_PROGRAM,
@@ -32,6 +33,7 @@ typedef struct ASTNode {
         // var decl
         struct {
             char* name;
+            ValueType type;
             struct ASTNode* initializer;
         } variable_declaration;
 

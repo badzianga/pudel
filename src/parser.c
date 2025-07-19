@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -6,6 +7,7 @@
 #include "lexer.h"
 #include "memory.h"
 #include "parser.h"
+#include "value.h"
 
 typedef struct Parser {
     Token* tokens;
@@ -48,10 +50,11 @@ static ASTNode* make_node_program() {
     return node;
 }
 
-static ASTNode* make_node_variable_declaration(char* name, ASTNode* initializer) {
+static ASTNode* make_node_variable_declaration(char* name, ValueType type, ASTNode* initializer) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_VARIABLE_DECLARATION;
     node->variable_declaration.name = name;
+    node->variable_declaration.type = type;
     node->variable_declaration.initializer = initializer;
     return node;
 }
@@ -192,7 +195,7 @@ static ASTNode* parse_program() {
 }
 
 static ASTNode* parse_declaration() {
-    if (match(1, TOKEN_INT)) {
+    if (match(1, TOKEN_VAR)) {
         return parse_variable_declaration();
     }
     return parse_statement();
@@ -202,13 +205,31 @@ static ASTNode* parse_variable_declaration() {
     consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
     char* name = strndup(previous()->value, previous()->length);
 
+    ValueType type = VALUE_NONE;
+    if (match(1, TOKEN_COLON)) {
+        if (match(1, TOKEN_INT)) {
+            type = VALUE_INT;
+        }
+        else {
+            fprintf(stderr, "error: expected type after ':'\n");
+            exit(1);
+        }
+    }
+    else if (match(1, TOKEN_SEMICOLON)) {
+        assert(false && "parser::parse_variable_declaration: type inference not implemented");
+    }
+    else {
+        fprintf(stderr, "error: expected variable type\n");
+        exit(1);
+    }
+
     ASTNode* initializer = NULL;
     if (match(1, TOKEN_EQUAL)) {
         initializer = parse_expression();
     }
 
     consume_expected(TOKEN_SEMICOLON, "expected ';' after variable declaration");
-    return make_node_variable_declaration(name, initializer);
+    return make_node_variable_declaration(name, type, initializer);
 }
 
 static ASTNode* parse_statement() {

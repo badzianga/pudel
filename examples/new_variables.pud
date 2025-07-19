@@ -1,0 +1,14 @@
+// Playground for testing new variable semantics.
+
+// declare uninitialized, with later assignment
+var a: int;
+a = 1;
+print a;
+
+// declare with initialization
+var b: int = 2;
+print b;
+
+// declare with type inference
+// var c := a + b;
+// print c;
