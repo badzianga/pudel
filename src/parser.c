@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -145,10 +146,11 @@ static ASTNode* make_node_unary(TokenType op, ASTNode* right) {
     return node;
 }
 
-static ASTNode* make_node_literal(int value) {
+static ASTNode* make_node_literal(int64_t value) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_LITERAL;
-    node->literal = value;
+    node->literal.type = VALUE_INT;
+    node->literal.int_ = value;
     return node;
 }
 
@@ -432,7 +434,7 @@ static ASTNode* parse_unary() {
 
 static ASTNode* parse_primary() {
     if (match(1, TOKEN_INT_LITERAL)) {
-        int value = strtol(previous()->value, NULL, 10);
+        int64_t value = strtoll(previous()->value, NULL, 10);
         return make_node_literal(value);
     }
     if (match(1, TOKEN_IDENTIFIER)) {

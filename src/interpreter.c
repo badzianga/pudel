@@ -6,9 +6,9 @@
 #include "parser.h"
 #include "value.h"
 
-#define INTERPRET_BINARY(node, op) interpreter_interpret((node)->binary.left) op interpreter_interpret((node)->binary.right)
-#define INTERPRET_UNARY(node, op) op interpreter_interpret((node)->unary.right)
-#define INTERPRET_ASSIGNMENT(var, op, val) (var)->value.int_ op val 
+#define INTERPRET_BINARY(node, op) interpreter_interpret((node)->binary.left).int_ op interpreter_interpret((node)->binary.right).int_
+#define INTERPRET_UNARY(node, op) op interpreter_interpret((node)->unary.right).int_
+#define INTERPRET_ASSIGNMENT(var, op, val) (var)->value.int_ op (val).int_
 
 typedef struct Variable {
     char* name;
@@ -28,7 +28,7 @@ static Variable* get_variable(char* name) {
     return NULL;
 }
 
-int interpreter_interpret(ASTNode* root) {
+Value interpreter_interpret(ASTNode* root) {
     switch (root->type) {
         case AST_NODE_PROGRAM: {
             for (int i = 0; i < root->scope.count; ++i) {
@@ -40,7 +40,7 @@ int interpreter_interpret(ASTNode* root) {
                 fprintf(stderr, "error: redefinition of variable '%s'\n", root->variable_declaration.name);
                 exit(1);
             }
-            int value = 0;
+            Value value = { .type = VALUE_INT, .int_ = 0 };
             if (root->variable_declaration.initializer != NULL) {
                 value = interpreter_interpret(root->variable_declaration.initializer);
             }
@@ -50,10 +50,10 @@ int interpreter_interpret(ASTNode* root) {
             interpreter_interpret(root->expression);
         } break;
         case AST_NODE_PRINT_STATEMENT: {
-            printf("%d\n", interpreter_interpret(root->expression));
+            printf("%ld\n", interpreter_interpret(root->expression).int_);
         } break;
         case AST_NODE_IF_STATEMENT: {
-            if (interpreter_interpret(root->if_statement.condition)) {
+            if (interpreter_interpret(root->if_statement.condition).int_) {
                 interpreter_interpret(root->if_statement.then_branch);
             }
             else if (root->if_statement.else_branch != NULL) {
@@ -61,7 +61,7 @@ int interpreter_interpret(ASTNode* root) {
             }
         } break;
         case AST_NODE_WHILE_STATEMENT: {
-            while (interpreter_interpret(root->while_statement.condition)) {
+            while (interpreter_interpret(root->while_statement.condition).int_) {
                 if (root->while_statement.body != NULL) {
                     interpreter_interpret(root->while_statement.body);
                 }
@@ -78,33 +78,39 @@ int interpreter_interpret(ASTNode* root) {
                 fprintf(stderr, "error: undeclared identifier '%s'\n", root->assignment.name);
                 exit(1);
             }
-            int value = interpreter_interpret(root->assignment.value);
+            Value value = interpreter_interpret(root->assignment.value);
             switch(root->assignment.op) {
                 case TOKEN_PLUS_EQUAL: {
-                    return INTERPRET_ASSIGNMENT(var, +=, value);
+                    INTERPRET_ASSIGNMENT(var, +=, value);
+                    return var->value;
                 } break;
                 case TOKEN_MINUS_EQUAL: {
-                    return INTERPRET_ASSIGNMENT(var, -=, value);
+                    INTERPRET_ASSIGNMENT(var, -=, value);
+                    return var->value;
                 } break;
                 case TOKEN_ASTERISK_EQUAL: {
-                    return INTERPRET_ASSIGNMENT(var, *=, value);
+                    INTERPRET_ASSIGNMENT(var, -=, value);
+                    return var->value;
                 } break;
                 case TOKEN_SLASH_EQUAL: {
-                    if (value == 0) {
+                    if (value.int_ == 0) {
                         fprintf(stderr, "error: division by zero\n");
                         exit(1);
                     }
-                    return var->value.int_ /= value;
+                    var->value.int_ /= value.int_;
+                    return var->value;
                 } break;
                 case TOKEN_PERCENT_EQUAL: {
-                    if (value == 0) {
+                    if (value.int_ == 0) {
                         fprintf(stderr, "error: remainder by zero is undefined\n");
                         exit(1);
                     }
-                    return var->value.int_ %= value;
+                    var->value.int_ %= value.int_;
+                    return var->value;
                 } break;
                 case TOKEN_EQUAL: {
-                    return INTERPRET_ASSIGNMENT(var, =, value);
+                    INTERPRET_ASSIGNMENT(var, =, value);
+                    return var->value;
                 } break;
                 default: {
                     fprintf(
@@ -117,13 +123,13 @@ int interpreter_interpret(ASTNode* root) {
             }
         } break;
         case AST_NODE_LOGICAL: {
-            int left = interpreter_interpret(root->binary.left);
+            Value left = interpreter_interpret(root->binary.left);
             switch (root->binary.op) {
                 case TOKEN_LOGICAL_OR: {
-                    if (left) return left;
+                    if (left.int_) return left;
                 } break;
                 case TOKEN_LOGICAL_AND: {
-                    if (!left) return left;
+                    if (!left.int_) return left;
                 } break;
                 default: {
                     fprintf(
@@ -138,33 +144,42 @@ int interpreter_interpret(ASTNode* root) {
         } break;
         case AST_NODE_BINARY: {
             switch (root->binary.op) {
-                case TOKEN_PLUS:          return INTERPRET_BINARY(root, +);
-                case TOKEN_MINUS:         return INTERPRET_BINARY(root, -);
-                case TOKEN_ASTERISK:      return INTERPRET_BINARY(root, *);
+                case TOKEN_PLUS:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, +) };
+                case TOKEN_MINUS:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, -) };
+                case TOKEN_ASTERISK:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, +) };
                 case TOKEN_SLASH: {
-                    int left = interpreter_interpret(root->binary.left);
-                    int right = interpreter_interpret(root->binary.right);
-                    if (right == 0) {
+                    Value left = interpreter_interpret(root->binary.left);
+                    Value right = interpreter_interpret(root->binary.right);
+                    if (right.int_ == 0) {
                         fprintf(stderr, "error: division by zero\n");
                         exit(1);
                     }
-                    return left / right;
+                    return (Value) { .type = VALUE_INT, .int_ = left.int_ / right.int_ };
                 }
                 case TOKEN_PERCENT: {
-                    int left = interpreter_interpret(root->binary.left);
-                    int right = interpreter_interpret(root->binary.right);
-                    if (right == 0) {
+                    Value left = interpreter_interpret(root->binary.left);
+                    Value right = interpreter_interpret(root->binary.right);
+                    if (right.int_ == 0) {
                         fprintf(stderr, "error: remainder by zero is undefined\n");
                         exit(1);
                     }
-                    return left % right;
+                    return (Value) { .type = VALUE_INT, .int_ = left.int_ / right.int_ };
                 }
-                case TOKEN_EQUAL_EQUAL:   return INTERPRET_BINARY(root, ==);
-                case TOKEN_NOT_EQUAL:     return INTERPRET_BINARY(root, !=);
-                case TOKEN_GREATER:       return INTERPRET_BINARY(root, >);
-                case TOKEN_GREATER_EQUAL: return INTERPRET_BINARY(root, >=);
-                case TOKEN_LESS:          return INTERPRET_BINARY(root, <);
-                case TOKEN_LESS_EQUAL:    return INTERPRET_BINARY(root, <=);
+                case TOKEN_EQUAL_EQUAL:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, ==) };
+                case TOKEN_NOT_EQUAL:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, !=) };
+                case TOKEN_GREATER:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, >) };
+                case TOKEN_GREATER_EQUAL:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, >=) };
+                case TOKEN_LESS:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, <) };
+                case TOKEN_LESS_EQUAL:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, <=) };
                 default: {
                     fprintf(
                         stderr,
@@ -177,8 +192,10 @@ int interpreter_interpret(ASTNode* root) {
         } break;
         case AST_NODE_UNARY: {
             switch (root->unary.op) {
-                case TOKEN_MINUS: return INTERPRET_UNARY(root, -);
-                case TOKEN_NOT:   return INTERPRET_UNARY(root, !);
+                case TOKEN_MINUS:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_UNARY(root, -) };
+                case TOKEN_NOT:
+                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_UNARY(root, !) };
                 default: {
                     fprintf(
                         stderr,
@@ -198,7 +215,7 @@ int interpreter_interpret(ASTNode* root) {
                 fprintf(stderr, "error: undeclared identifier '%s'\n", root->name);
                 exit(1);
             }
-            return var->value.int_;
+            return var->value;
         } break;
         default: {
             fprintf(
@@ -209,5 +226,5 @@ int interpreter_interpret(ASTNode* root) {
             exit(1);
         } break;
     }
-    return 0;
+    return (Value) { 0 };
 }

@@ -9,7 +9,7 @@ typedef enum ValueType {
 typedef struct Value {
     ValueType type;
     union {
-        long int_;
+        int64_t int_;
     };
 } Value;
 

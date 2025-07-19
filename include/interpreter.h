@@ -1,4 +1,5 @@
 #pragma once
 #include "parser.h"
+#include "value.h"
 
-int interpreter_interpret(ASTNode* root);
+Value interpreter_interpret(ASTNode* root);

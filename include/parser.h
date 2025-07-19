@@ -74,7 +74,7 @@ typedef struct ASTNode {
         } unary;
 
         // literal
-        int literal;
+        Value literal;
 
         // var
         char* name;

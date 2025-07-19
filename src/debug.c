@@ -99,7 +99,7 @@ void debug_print_ast(ASTNode* root, int indent) {
             debug_print_ast(root->unary.right, indent + 1);
         } break;
         case AST_NODE_LITERAL: {
-            printf("Literal: %d\n", root->literal);
+            printf("Literal: %s %ld\n", value_type_as_cstr(root->literal.type), root->literal.int_);
         } break;
         case AST_NODE_VARIABLE: {
             printf("Variable: %s\n", root->name);
