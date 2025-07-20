@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -277,8 +276,13 @@ static ASTNode* parse_variable_declaration() {
         }
         ++parser.current;
     }
-    else if (match(1, TOKEN_SEMICOLON)) {
-        assert(false && "parser::parse_variable_declaration: type inference not implemented");
+    else if (match(1, TOKEN_COLON_EQUAL)) {
+        ASTNode* initializer = parse_expression();
+
+        type = initializer->inferred_type;
+
+        consume_expected(TOKEN_SEMICOLON, "expected ';' after variable declaration");
+        return make_node_variable_declaration(name, type, initializer);
     }
     else {
         fprintf(stderr, "error: expected variable type\n");
