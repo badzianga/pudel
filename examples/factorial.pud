@@ -1,8 +1,8 @@
-// this program calculates factorial using for loop
+// This program calculates factorial using for loop.
 
-int factorial = 1;
-int n = 5;
-for (int i = 1; i <= n; i += 1) {
+var factorial := 1;
+var n := 5;
+for (int i := 1; i <= n; i += 1) {
     factorial *= i;
 }
 print factorial;
