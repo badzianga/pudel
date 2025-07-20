@@ -77,9 +77,15 @@ static void skip_whitespace() {
     }
 }
 
-static Token read_int() {
+static Token read_number() {
     while (isdigit(peek())) {
         advance();
+    }
+    if (advance_if('.')) {
+        while (isdigit(peek())) {
+            advance();
+        }
+        return make_token(TOKEN_FLOAT_LITERAL);
     }
     return make_token(TOKEN_INT_LITERAL);
 }
@@ -92,6 +98,10 @@ static Token read_identifier() {
     static const char* keywords[] = {
         "var",
         "int",
+        "float",
+        "bool",
+        "true",
+        "false",
         "print",
         "if",
         "else",
@@ -168,7 +178,7 @@ static Token next_token() {
             break;
     }
 
-    if (isdigit(c)) return read_int();
+    if (isdigit(c)) return read_number();
     else if (isalpha(c) || c == '_') return read_identifier();
 
     return make_error_token("unexpected character");
@@ -235,9 +245,14 @@ const char* token_as_cstr(TokenType type) {
 
         "IDENTIFIER",
         "INT_LITERAL",
+        "FLOAT_LITERAL",
 
         "var",
         "int",
+        "float",
+        "bool",
+        "true",
+        "false",
         "print",
         "if",
         "else",

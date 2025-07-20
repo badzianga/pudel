@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,11 +6,6 @@
 #include "lexer.h"
 #include "parser.h"
 #include "value.h"
-
-#define INTERPRET_BINARY(node, op) interpreter_interpret((node)->binary.left).int_ op interpreter_interpret((node)->binary.right).int_
-#define INTERPRET_UNARY(node, op) op interpreter_interpret((node)->unary.right).int_
-#define INTERPRET_ASSIGNMENT(var, op, val) (var)->value.int_ op (val).int_
-
 typedef struct Variable {
     char* name;
     Value value;
@@ -28,6 +24,50 @@ static Variable* get_variable(char* name) {
     return NULL;
 }
 
+static Value promote(Value value, ValueType target_type) {
+    Value result = { .type = target_type };
+    switch (target_type) {
+        case VALUE_INT: {
+            switch (value.type) {
+                case VALUE_INT: return value;
+                case VALUE_FLOAT: result.int_ = (int64_t) value.float_; break;
+                case VALUE_BOOL: result.int_ = value.bool_ ? 1 : 0; break;
+                default: {
+                    fprintf(stderr, "interpreter::promote: cannot promote %d -> %d\n", value.type, target_type);
+                    exit(1);
+                } break;
+            }
+        } break;
+        case VALUE_FLOAT: {
+            switch (value.type) {
+                case VALUE_INT: result.float_ = (double) value.int_; break;
+                case VALUE_FLOAT: return value;
+                case VALUE_BOOL: result.float_ = value.bool_ ? 1.0 : 0.0; break;
+                default: {
+                    fprintf(stderr, "interpreter::promote: cannot promote %d -> %d\n", value.type, target_type);
+                    exit(1);
+                } break;
+            }
+        } break;
+        case VALUE_BOOL: {
+            switch (value.type) {
+                case VALUE_INT: result.bool_ = value.int_ != 0; break;
+                case VALUE_FLOAT: result.bool_ = value.float_ != 0.0; break;
+                case VALUE_BOOL: return value;;
+                default: {
+                    fprintf(stderr, "interpreter::promote: cannot promote %d -> %d\n", value.type, target_type);
+                    exit(1);
+                } break;
+            }
+        } break;
+        default: {
+            fprintf(stderr, "interpreter::promote: cannot promote %d -> %d\n", value.type, target_type);
+            exit(1);
+        } break;
+    }
+    return result;
+}
+
 Value interpreter_interpret(ASTNode* root) {
     switch (root->type) {
         case AST_NODE_PROGRAM: {
@@ -40,9 +80,9 @@ Value interpreter_interpret(ASTNode* root) {
                 fprintf(stderr, "error: redefinition of variable '%s'\n", root->variable_declaration.name);
                 exit(1);
             }
-            Value value = { .type = VALUE_INT, .int_ = 0 };
+            Value value = { .type = root->variable_declaration.type , .int_ = 0 };
             if (root->variable_declaration.initializer != NULL) {
-                value = interpreter_interpret(root->variable_declaration.initializer);
+                value = promote(interpreter_interpret(root->variable_declaration.initializer), root->variable_declaration.type);
             }
             variables[variable_count++] = (Variable) { root->variable_declaration.name, value };
         } break;
@@ -50,7 +90,22 @@ Value interpreter_interpret(ASTNode* root) {
             interpreter_interpret(root->expression);
         } break;
         case AST_NODE_PRINT_STATEMENT: {
-            printf("%ld\n", interpreter_interpret(root->expression).int_);
+            Value value = interpreter_interpret(root->expression);
+            switch (value.type) {
+                case VALUE_INT: {
+                    printf("%ld\n", value.int_);
+                } break;
+                case VALUE_FLOAT: {
+                    printf("%lf\n", value.float_);
+                } break;
+                case VALUE_BOOL: {
+                    printf("%s\n", value.bool_ ? "true" : "false");
+                } break;
+                default: {
+                    printf("interpreter::interpreter_interpret: invalid value type in print statement: %d\n", value.type);
+                    exit(1);
+                } break;
+            }
         } break;
         case AST_NODE_IF_STATEMENT: {
             if (interpreter_interpret(root->if_statement.condition).int_) {
@@ -78,39 +133,67 @@ Value interpreter_interpret(ASTNode* root) {
                 fprintf(stderr, "error: undeclared identifier '%s'\n", root->assignment.name);
                 exit(1);
             }
-            Value value = interpreter_interpret(root->assignment.value);
+            Value value = promote(interpreter_interpret(root->assignment.value), var->value.type);
             switch(root->assignment.op) {
                 case TOKEN_PLUS_EQUAL: {
-                    INTERPRET_ASSIGNMENT(var, +=, value);
-                    return var->value;
+                    if (var->value.type == VALUE_INT) var->value.int_ += value.int_;
+                    else if (var->value.type == VALUE_FLOAT) var->value.float_ += value.float_;
                 } break;
                 case TOKEN_MINUS_EQUAL: {
-                    INTERPRET_ASSIGNMENT(var, -=, value);
-                    return var->value;
+                    if (var->value.type == VALUE_INT) var->value.int_ -= value.int_;
+                    else if (var->value.type == VALUE_FLOAT) var->value.float_ -= value.float_;
+                    else var->value.bool_ -= value.bool_;
                 } break;
                 case TOKEN_ASTERISK_EQUAL: {
-                    INTERPRET_ASSIGNMENT(var, -=, value);
-                    return var->value;
+                    if (var->value.type == VALUE_INT) var->value.int_ *= value.int_;
+                    else if (var->value.type == VALUE_FLOAT) var->value.float_ *= value.float_;
+                    else var->value.bool_ *= value.bool_;
                 } break;
                 case TOKEN_SLASH_EQUAL: {
-                    if (value.int_ == 0) {
-                        fprintf(stderr, "error: division by zero\n");
-                        exit(1);
+                    if (var->value.type == VALUE_INT) {
+                        if (value.int_ == 0) {
+                            fprintf(stderr, "error: division by zero\n");
+                            exit(1);
+                        }
+                        var->value.int_ /= value.int_;
                     }
-                    var->value.int_ /= value.int_;
-                    return var->value;
+                    else if (var->value.type == VALUE_FLOAT) {
+                        if (value.float_ == 0) {
+                            fprintf(stderr, "error: division by zero\n");
+                            exit(1);
+                        }
+                        var->value.float_ /= value.float_;
+                    }
+                    else {
+                        if (value.bool_ == 0) {
+                            fprintf(stderr, "error: division by zero\n");
+                            exit(1);
+                        }
+                        var->value.bool_ /= value.bool_;
+                    }
                 } break;
                 case TOKEN_PERCENT_EQUAL: {
-                    if (value.int_ == 0) {
+                    if (var->value.type == VALUE_INT) {
+                        if (value.int_ == 0) {
+                            fprintf(stderr, "error: remainder by zero is undefined\n");
+                            exit(1);
+                        }
+                        var->value.int_ %= value.int_;
+                    }
+                    if (var->value.type == VALUE_FLOAT) {
+                        fprintf(stderr, "error: modulo operation for float is undefined\n");
+                        exit(1);
+                    }
+                    if (value.bool_ == 0) {  // must be result_type == VALUE_BOOL
                         fprintf(stderr, "error: remainder by zero is undefined\n");
                         exit(1);
                     }
-                    var->value.int_ %= value.int_;
-                    return var->value;
+                    var->value.bool_ %= value.bool_;
                 } break;
                 case TOKEN_EQUAL: {
-                    INTERPRET_ASSIGNMENT(var, =, value);
-                    return var->value;
+                    if (var->value.type == VALUE_INT) var->value.int_ = value.int_;
+                    else if (var->value.type == VALUE_FLOAT) var->value.float_ = value.float_;
+                    else var->value.bool_ = value.bool_;
                 } break;
                 default: {
                     fprintf(
@@ -121,15 +204,16 @@ Value interpreter_interpret(ASTNode* root) {
                     exit(1);
                 } break;
             }
+            return var->value;
         } break;
         case AST_NODE_LOGICAL: {
-            Value left = interpreter_interpret(root->binary.left);
+            Value left = promote(interpreter_interpret(root->binary.left), VALUE_BOOL);
             switch (root->binary.op) {
                 case TOKEN_LOGICAL_OR: {
-                    if (left.int_) return left;
+                    if (left.bool_) return left;
                 } break;
                 case TOKEN_LOGICAL_AND: {
-                    if (!left.int_) return left;
+                    if (!left.bool_) return left;
                 } break;
                 default: {
                     fprintf(
@@ -140,46 +224,85 @@ Value interpreter_interpret(ASTNode* root) {
                     exit(1);
                 } break;
             }
-            return interpreter_interpret(root->binary.right);
+            return promote(interpreter_interpret(root->binary.right), VALUE_BOOL);
         } break;
         case AST_NODE_BINARY: {
+            Value left = interpreter_interpret(root->binary.left);
+            Value right = interpreter_interpret(root->binary.right);
+
+            // TODO: I think I should use root->inferred_type here, but I'm not sure
+            ValueType result_type = VALUE_NONE;
+            if (left.type == VALUE_FLOAT || right.type == VALUE_FLOAT) result_type = VALUE_FLOAT;
+            else if (left.type == VALUE_INT || right.type == VALUE_INT) result_type = VALUE_INT;
+            else result_type = VALUE_BOOL;
+
+            left = promote(left, result_type);
+            right = promote(right, result_type);
+
             switch (root->binary.op) {
                 case TOKEN_PLUS:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, +) };
+                    if (result_type == VALUE_INT) return INT_VALUE(left.int_ + right.int_);
+                    if (result_type == VALUE_FLOAT) return FLOAT_VALUE(left.float_ + right.float_);
+                    return INT_VALUE(left.bool_ + right.bool_);
                 case TOKEN_MINUS:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, -) };
+                    if (result_type == VALUE_INT) return INT_VALUE(left.int_ - right.int_);
+                    if (result_type == VALUE_FLOAT) return FLOAT_VALUE(left.float_ - right.float_);
+                    return INT_VALUE(left.bool_ - right.bool_);
                 case TOKEN_ASTERISK:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, +) };
+                    if (result_type == VALUE_INT) return INT_VALUE(left.int_ * right.int_);
+                    if (result_type == VALUE_FLOAT) return FLOAT_VALUE(left.float_ * right.float_);
+                    return INT_VALUE(left.bool_ * right.bool_);
                 case TOKEN_SLASH: {
-                    Value left = interpreter_interpret(root->binary.left);
-                    Value right = interpreter_interpret(root->binary.right);
-                    if (right.int_ == 0) {
+                    if (right.bool_ == 0 || right.int_ == 0) {
                         fprintf(stderr, "error: division by zero\n");
                         exit(1);
                     }
-                    return (Value) { .type = VALUE_INT, .int_ = left.int_ / right.int_ };
+                    if (result_type == VALUE_INT) return INT_VALUE(left.int_ / right.int_);
+                    if (result_type == VALUE_FLOAT) return FLOAT_VALUE(left.float_ / right.float_);
+                    return INT_VALUE(left.bool_ / right.bool_);
                 }
                 case TOKEN_PERCENT: {
-                    Value left = interpreter_interpret(root->binary.left);
-                    Value right = interpreter_interpret(root->binary.right);
-                    if (right.int_ == 0) {
+                    if (result_type == VALUE_INT) {
+                        if (right.int_ == 0) {
+                            fprintf(stderr, "error: remainder by zero is undefined\n");
+                            exit(1);
+                        }
+                        return INT_VALUE(left.int_ % right.int_);
+                    }
+                    if (result_type == VALUE_FLOAT) {
+                        fprintf(stderr, "error: modulo operation for float is undefined\n");
+                        exit(1);
+                    }
+                    if (right.bool_ == 0) {  // must be result_type == VALUE_BOOL
                         fprintf(stderr, "error: remainder by zero is undefined\n");
                         exit(1);
                     }
-                    return (Value) { .type = VALUE_INT, .int_ = left.int_ / right.int_ };
+                    return INT_VALUE(left.bool_ % right.bool_);
                 }
                 case TOKEN_EQUAL_EQUAL:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, ==) };
+                    if (result_type == VALUE_INT) return BOOL_VALUE(left.int_ == right.int_);
+                    if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.float_ == right.float_);
+                    return BOOL_VALUE(left.bool_ == right.bool_);
                 case TOKEN_NOT_EQUAL:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, !=) };
+                    if (result_type == VALUE_INT) return BOOL_VALUE(left.int_ != right.int_);
+                    if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.float_ != right.float_);
+                    return BOOL_VALUE(left.bool_ != right.bool_);
                 case TOKEN_GREATER:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, >) };
+                    if (result_type == VALUE_INT) return BOOL_VALUE(left.int_ > right.int_);
+                    if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.float_ > right.float_);
+                    return BOOL_VALUE(left.bool_ > right.bool_);
                 case TOKEN_GREATER_EQUAL:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, >=) };
+                    if (result_type == VALUE_INT) return BOOL_VALUE(left.int_ >= right.int_);
+                    if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.float_ >= right.float_);
+                    return BOOL_VALUE(left.bool_ >= right.bool_);
                 case TOKEN_LESS:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, <) };
+                    if (result_type == VALUE_INT) return BOOL_VALUE(left.int_ < right.int_);
+                    if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.float_ < right.float_);
+                    return BOOL_VALUE(left.bool_ < right.bool_);
                 case TOKEN_LESS_EQUAL:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_BINARY(root, <=) };
+                    if (result_type == VALUE_INT) return BOOL_VALUE(left.int_ <= right.int_);
+                    if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.float_ <= right.float_);
+                    return BOOL_VALUE(left.bool_ <= right.bool_);
                 default: {
                     fprintf(
                         stderr,
@@ -191,11 +314,33 @@ Value interpreter_interpret(ASTNode* root) {
             }
         } break;
         case AST_NODE_UNARY: {
+            Value value = interpreter_interpret(root->unary.right);
+
             switch (root->unary.op) {
-                case TOKEN_MINUS:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_UNARY(root, -) };
-                case TOKEN_NOT:
-                    return (Value) { .type = VALUE_INT, .int_ = INTERPRET_UNARY(root, !) };
+                case TOKEN_MINUS: {
+                    switch (value.type) {
+                        case VALUE_INT: {
+                            value.int_ = -value.int_;
+                        } break;
+                        case VALUE_FLOAT: {
+                            value.float_ = -value.float_;
+                        } break;
+                        case VALUE_BOOL: {
+                            value = promote(value, VALUE_INT);
+                            value.int_ = -value.int_;
+                        } break;
+                        default: {
+                            fprintf(stderr, "interpreter::interpreter_interpret: invalid value type in unary '-': %d\n", value.type);
+                            exit(1);
+                        } break;
+                    }
+                    return value;
+                } break;
+                case TOKEN_NOT: {
+                    value = promote(value, VALUE_BOOL);
+                    value.bool_ = !value.bool_;
+                    return value;
+                } break;
                 default: {
                     fprintf(
                         stderr,

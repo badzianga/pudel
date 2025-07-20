@@ -81,7 +81,12 @@ void debug_print_ast(ASTNode* root, int indent) {
             }
         } break;
         case AST_NODE_ASSIGNMENT: {
-            printf("Assignment: %s %s\n", root->assignment.name, token_as_cstr(root->assignment.op));
+            printf(
+                "Assignment: %s %s %s\n",
+                value_type_as_cstr(root->inferred_type),
+                root->assignment.name,
+                token_as_cstr(root->assignment.op)
+            );
             debug_print_ast(root->assignment.value, indent + 1);
         } break;
         case AST_NODE_LOGICAL: {
@@ -99,10 +104,18 @@ void debug_print_ast(ASTNode* root, int indent) {
             debug_print_ast(root->unary.right, indent + 1);
         } break;
         case AST_NODE_LITERAL: {
-            printf("Literal: %s %ld\n", value_type_as_cstr(root->literal.type), root->literal.int_);
+            if (root->literal.type == VALUE_INT) {
+                printf("Literal: %s %ld\n", value_type_as_cstr(root->literal.type), root->literal.int_);
+            }
+            else if (root->literal.type == VALUE_FLOAT) {
+                printf("Literal: %s %lf\n", value_type_as_cstr(root->literal.type), root->literal.float_);
+            }
+            else {
+                printf("Literal: %s %s\n", value_type_as_cstr(root->literal.type), root->literal.bool_ ? "true" : "false");
+            }
         } break;
         case AST_NODE_VARIABLE: {
-            printf("Variable: %s\n", root->name);
+            printf("Variable: %s %s\n", value_type_as_cstr(root->inferred_type), root->name);
         } break;
         default: {
             fprintf(stderr, "debug::debug_print_ast: uknown AST node type with value: %d\n", root->type);

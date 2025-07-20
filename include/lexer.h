@@ -36,9 +36,14 @@ typedef enum TokenType {
 
     TOKEN_IDENTIFIER,      // x
     TOKEN_INT_LITERAL,     // 0
+    TOKEN_FLOAT_LITERAL,   // 0.0
 
     TOKEN_VAR,             // var
     TOKEN_INT,             // int
+    TOKEN_FLOAT,           // float
+    TOKEN_BOOL,            // bool
+    TOKEN_TRUE,            // true
+    TOKEN_FALSE,           // false
     TOKEN_PRINT,           // print
     TOKEN_IF,              // if
     TOKEN_ELSE,            // else

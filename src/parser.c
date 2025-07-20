@@ -16,7 +16,24 @@ typedef struct Parser {
     int count;
 } Parser;
 
+typedef struct Symbol {
+    const char* name;
+    ValueType type;
+} Symbol;
+
 static Parser parser;
+static Symbol symbols[128] = { 0 };
+static int symbol_count = 0;
+
+static ValueType get_symbol_type(const char* name) {
+    const Symbol* end = symbols + symbol_count;
+    for (Symbol* symbol = symbols; symbol != end; ++symbol) {
+        if (strcmp(symbol->name, name) == 0) {
+            return symbol->type;
+        }
+    }
+    return VALUE_NONE;
+}
 
 static bool match(int argc, ...) {
     TokenType token = parser.current->type;
@@ -48,21 +65,28 @@ inline static Token* previous() {
 static ASTNode* make_node_program() {
     ASTNode* node = calloc(1, sizeof(ASTNode));
     node->type = AST_NODE_PROGRAM;
+    node->inferred_type = VALUE_NONE;
     return node;
 }
 
 static ASTNode* make_node_variable_declaration(char* name, ValueType type, ASTNode* initializer) {
+    // TODO: check if variable already exists during parsing
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_VARIABLE_DECLARATION;
+    node->inferred_type = type;
     node->variable_declaration.name = name;
     node->variable_declaration.type = type;
     node->variable_declaration.initializer = initializer;
+
+    symbols[symbol_count++] = (Symbol) { .name = name, .type = type };
+
     return node;
 }
 
 static ASTNode* make_node_expression_statement(ASTNode* expression) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_EXPRESSION_STATEMENT;
+    node->inferred_type = expression->inferred_type;
     node->expression = expression;
     return node;
 }
@@ -70,6 +94,7 @@ static ASTNode* make_node_expression_statement(ASTNode* expression) {
 static ASTNode* make_node_print_statement(ASTNode* expression) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_PRINT_STATEMENT;
+    node->inferred_type = VALUE_NONE;
     node->expression = expression;
     return node;
 }
@@ -77,6 +102,7 @@ static ASTNode* make_node_print_statement(ASTNode* expression) {
 static ASTNode* make_node_if_statement(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_IF_STATEMENT;
+    node->inferred_type = VALUE_NONE;
     node->if_statement.condition = condition;
     node->if_statement.then_branch = then_branch;
     node->if_statement.else_branch = else_branch;
@@ -86,6 +112,7 @@ static ASTNode* make_node_if_statement(ASTNode* condition, ASTNode* then_branch,
 static ASTNode* make_node_while_statement(ASTNode* condition, ASTNode* body) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_WHILE_STATEMENT;
+    node->inferred_type = VALUE_NONE;
     node->while_statement.condition = condition;
     node->while_statement.body = body;
     return node;
@@ -94,6 +121,7 @@ static ASTNode* make_node_while_statement(ASTNode* condition, ASTNode* body) {
 static ASTNode* make_node_block() {
     ASTNode* node = calloc(1, sizeof(ASTNode));
     node->type = AST_NODE_BLOCK;
+    node->inferred_type = VALUE_NONE;
     return node;
 }
 
@@ -112,8 +140,10 @@ static ASTNode* make_node_block_filled_with(int argc, ...) {
 }
 
 static ASTNode* make_node_assignment(char* name, TokenType op, ASTNode* value) {
+    // TODO: check if variable exists during parsing
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_ASSIGNMENT;
+    node->inferred_type = get_symbol_type(name);
     node->assignment.name = name;
     node->assignment.op = op;
     node->assignment.value = value;
@@ -123,6 +153,7 @@ static ASTNode* make_node_assignment(char* name, TokenType op, ASTNode* value) {
 static ASTNode* make_node_logical(ASTNode* left, TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_LOGICAL;
+    node->inferred_type = VALUE_BOOL;
     node->binary.left = left;
     node->binary.op = op;
     node->binary.right = right;
@@ -132,6 +163,16 @@ static ASTNode* make_node_logical(ASTNode* left, TokenType op, ASTNode* right) {
 static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_BINARY;
+
+    ValueType lt = left->inferred_type;
+    ValueType rt = right->inferred_type;
+
+    ValueType result_type = VALUE_NONE;
+    if (lt == VALUE_FLOAT || rt == VALUE_FLOAT) result_type = VALUE_FLOAT;
+    else if (lt == VALUE_INT || rt == VALUE_INT) result_type = VALUE_INT;
+    else result_type = VALUE_BOOL;
+
+    node->inferred_type = result_type;
     node->binary.left = left;
     node->binary.op = op;
     node->binary.right = right;
@@ -141,22 +182,32 @@ static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
 static ASTNode* make_node_unary(TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_UNARY;
+    switch (op) {
+        case TOKEN_MINUS: {
+            node->inferred_type = (right->inferred_type == VALUE_BOOL) ? VALUE_INT : right->inferred_type;
+        } break;
+        case TOKEN_NOT: {
+            node->inferred_type = VALUE_BOOL;
+        }
+        default: break;
+    }
     node->unary.op = op;
     node->unary.right = right;
     return node;
 }
 
-static ASTNode* make_node_literal(int64_t value) {
+static ASTNode* make_node_literal(Value value) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_LITERAL;
-    node->literal.type = VALUE_INT;
-    node->literal.int_ = value;
+    node->inferred_type = value.type;
+    node->literal = value;
     return node;
 }
 
 static ASTNode* make_node_variable(char* name) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_VARIABLE;
+    node->inferred_type = get_symbol_type(name);
     node->name = name;
     return node;
 }
@@ -209,13 +260,22 @@ static ASTNode* parse_variable_declaration() {
 
     ValueType type = VALUE_NONE;
     if (match(1, TOKEN_COLON)) {
-        if (match(1, TOKEN_INT)) {
-            type = VALUE_INT;
+        switch (parser.current->type) {
+            case TOKEN_INT: {
+                type = VALUE_INT;
+            } break;
+            case TOKEN_FLOAT: {
+                type = VALUE_FLOAT;
+            } break;
+            case TOKEN_BOOL: {
+                type = VALUE_BOOL;
+            } break;
+            default: {
+                fprintf(stderr, "error: expected type after ':'\n");
+                exit(1);
+            } break;
         }
-        else {
-            fprintf(stderr, "error: expected type after ':'\n");
-            exit(1);
-        }
+        ++parser.current;
     }
     else if (match(1, TOKEN_SEMICOLON)) {
         assert(false && "parser::parse_variable_declaration: type inference not implemented");
@@ -294,7 +354,7 @@ static ASTNode* parse_for_statement() {
     if (match(1, TOKEN_SEMICOLON)) {
         initializer = NULL;
     }
-    else if (match(1, TOKEN_INT)) {
+    else if (match(1, TOKEN_VAR)) {
         initializer = parse_variable_declaration();
     }
     else {
@@ -320,7 +380,7 @@ static ASTNode* parse_for_statement() {
     }
 
     if (condition == NULL) {
-        condition = make_node_literal(1);
+        condition = make_node_literal(BOOL_VALUE(true));
     }
     body = make_node_while_statement(condition, body); 
 
@@ -433,13 +493,23 @@ static ASTNode* parse_unary() {
 }
 
 static ASTNode* parse_primary() {
-    if (match(1, TOKEN_INT_LITERAL)) {
-        int64_t value = strtoll(previous()->value, NULL, 10);
-        return make_node_literal(value);
-    }
     if (match(1, TOKEN_IDENTIFIER)) {
         char* name = strndup(previous()->value, previous()->length);
         return make_node_variable(name);
+    }
+    if (match(1, TOKEN_INT_LITERAL)) {
+        int64_t value = strtoll(previous()->value, NULL, 10);
+        return make_node_literal(INT_VALUE(value));
+    }
+    if (match(1, TOKEN_FLOAT_LITERAL)) {
+        double value = strtod(previous()->value, NULL);
+        return make_node_literal(FLOAT_VALUE(value));
+    }
+    if (match(1, TOKEN_TRUE)) {
+        return make_node_literal(BOOL_VALUE(true));
+    }
+    if (match(1, TOKEN_FALSE)) {
+        return make_node_literal(BOOL_VALUE(false));
     }
     if (match(1, TOKEN_LEFT_PAREN)) {
         ASTNode* inside = parse_expression();
