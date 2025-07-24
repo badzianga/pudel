@@ -1,8 +1,10 @@
 # Pudel
 
-Pudel (read as poodle) is a work-in-progress simple interpreted programming language written in C, based on the tree-walk interpreter. It was created as a learning project to better understand how programming languages and interpreters work.
+Pudel (read as poodle) is a simple interpreted programming language written in C, based on the tree-walk interpreter. It was created as a learning project to better understand how programming languages and interpreters work.
 
-This project is inspired by ["Crafting Interpreters" by Robert Nystrom](https://craftinginterpreters.com/), but with own modifications, like static typing and more assignment operators.
+This project is currently on hold due to increasing complexity caused by static typing combined with AST walker, however I may return to development after playing around with the VM.
+
+Pudel is inspired by `jlox` from ["Crafting Interpreters" by Robert Nystrom](https://craftinginterpreters.com/), but with own modifications, like static typing and more assignment operators.
 
 ## Features
 
@@ -29,19 +31,3 @@ Pudel currently runs only source files passed as command-line argument:
 ```bash
 ./pudel examples/factorial.pud
 ```
-
-## Future improvements
-
-- Proper variable scopes
-- Strings
-- User-defined functions
-- Native functions
-- Classes and basic object-oriented features
-- Hash maps for variables, functions and classes lookup
-- Interactive REPL
-- Improved error handling and diagnostics
-- `break` and `continue` in loops
-- Ternary operator
-- Multi-line comments
-- Multiple statements in one line, separated by `,`
-- Bitwise operators: `&`, `|`, `^`, `~` and their assignments
