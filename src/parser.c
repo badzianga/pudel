@@ -409,7 +409,6 @@ static ASTNode* parse_unary() {
 }
 
 static ASTNode* parse_primary() {
-    // TODO: add token and parse null
     if (match(1, TOKEN_IDENTIFIER)) {
         char* name = strndup(previous()->value, previous()->length);
         return make_node_variable(name);
