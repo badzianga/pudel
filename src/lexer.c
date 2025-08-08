@@ -78,16 +78,12 @@ static void skip_whitespace() {
 }
 
 static Token read_number() {
-    while (isdigit(peek())) {
-        advance();
-    }
+    while (isdigit(peek())) advance();
+
     if (advance_if('.')) {
-        while (isdigit(peek())) {
-            advance();
-        }
-        return make_token(TOKEN_FLOAT_LITERAL);
+        while (isdigit(peek())) advance();
     }
-    return make_token(TOKEN_INT_LITERAL);
+    return make_token(TOKEN_NUMBER);
 }
 
 static Token read_identifier() {
@@ -96,17 +92,16 @@ static Token read_identifier() {
     }
 
     static const char* keywords[] = {
-        "var",
-        "int",
-        "float",
-        "bool",
-        "true",
-        "false",
-        "print",
-        "if",
+        "and",
         "else",
-        "while",
+        "false",
         "for",
+        "if",
+        "or",
+        "print",
+        "true",
+        "var",
+        "while",
     };
     const int keywords_amount = sizeof(keywords) / sizeof(keywords[0]);
 
@@ -158,10 +153,6 @@ static Token next_token() {
             return advance_if('=') ? make_token(TOKEN_ASTERISK_EQUAL) : make_token(TOKEN_ASTERISK);
         case '/':
             return advance_if('=') ? make_token(TOKEN_SLASH_EQUAL) : make_token(TOKEN_SLASH);
-        case '%':
-            return advance_if('=') ? make_token(TOKEN_PERCENT_EQUAL) : make_token(TOKEN_PERCENT);
-        case ':':
-            return advance_if('=') ? make_token(TOKEN_COLON_EQUAL) : make_token(TOKEN_COLON);
         case '=':
             return advance_if('=') ? make_token(TOKEN_EQUAL_EQUAL) : make_token(TOKEN_EQUAL);
         case '!':
@@ -170,10 +161,6 @@ static Token next_token() {
             return advance_if('=') ? make_token(TOKEN_GREATER_EQUAL) : make_token(TOKEN_GREATER);
         case '<':
             return advance_if('=') ? make_token(TOKEN_LESS_EQUAL) : make_token(TOKEN_LESS);
-        case '&':
-            return advance_if('&') ? make_token(TOKEN_LOGICAL_AND) : make_token(TOKEN_BIT_AND);
-        case '|':
-            return advance_if('|') ? make_token(TOKEN_LOGICAL_OR) : make_token(TOKEN_BIT_OR);
         default:
             break;
     }
@@ -193,9 +180,8 @@ TokenArray lexer_lex(const char* source) {
 
     while (!is_at_end()) {
         if (array.capacity < array.count + 1) {
-            int old_capacity = array.capacity;
-            array.capacity = GROW_CAPACITY(old_capacity);
-            array.tokens = GROW_ARRAY(Token, array.tokens, old_capacity, array.capacity);
+            array.capacity = GROW_CAPACITY(array.capacity);
+            array.tokens = GROW_ARRAY(Token, array.tokens, array.capacity);
         }
         array.tokens[array.count++] = next_token();
     }
@@ -226,10 +212,6 @@ const char* token_as_cstr(TokenType type) {
         "*=",
         "/",
         "/=",
-        "\045",
-        "\045=",
-        ":",
-        ":=",
         "=",
         "==",
         "!",
@@ -238,26 +220,20 @@ const char* token_as_cstr(TokenType type) {
         ">=",
         "<",
         "<=",
-        "&",
-        "&&",
-        "|",
-        "||",
 
         "IDENTIFIER",
-        "INT_LITERAL",
-        "FLOAT_LITERAL",
+        "NUMBER",
 
-        "var",
-        "int",
-        "float",
-        "bool",
-        "true",
-        "false",
-        "print",
-        "if",
+        "and",
         "else",
-        "while",
+        "false",
         "for",
+        "if",
+        "or",
+        "print",
+        "true",
+        "var",
+        "while",
 
         "ERROR",
     };

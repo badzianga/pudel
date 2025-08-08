@@ -17,10 +17,6 @@ typedef enum TokenType {
     TOKEN_ASTERISK_EQUAL,  // *=
     TOKEN_SLASH,           // /
     TOKEN_SLASH_EQUAL,     // /=
-    TOKEN_PERCENT,         // %
-    TOKEN_PERCENT_EQUAL,   // %=
-    TOKEN_COLON,           // :
-    TOKEN_COLON_EQUAL,     // :=
     TOKEN_EQUAL,           // =
     TOKEN_EQUAL_EQUAL,     // ==
     TOKEN_NOT,             // !
@@ -29,26 +25,20 @@ typedef enum TokenType {
     TOKEN_GREATER_EQUAL,   // >=
     TOKEN_LESS,            // <
     TOKEN_LESS_EQUAL,      // <=
-    TOKEN_BIT_AND,         // &
-    TOKEN_LOGICAL_AND,     // &&
-    TOKEN_BIT_OR,          // |
-    TOKEN_LOGICAL_OR,      // ||
 
     TOKEN_IDENTIFIER,      // x
-    TOKEN_INT_LITERAL,     // 0
-    TOKEN_FLOAT_LITERAL,   // 0.0
+    TOKEN_NUMBER,          // 0
 
-    TOKEN_VAR,             // var
-    TOKEN_INT,             // int
-    TOKEN_FLOAT,           // float
-    TOKEN_BOOL,            // bool
-    TOKEN_TRUE,            // true
-    TOKEN_FALSE,           // false
-    TOKEN_PRINT,           // print
-    TOKEN_IF,              // if
+    TOKEN_AND,             // and
     TOKEN_ELSE,            // else
-    TOKEN_WHILE,           // while
+    TOKEN_FALSE,           // false
     TOKEN_FOR,             // for
+    TOKEN_IF,              // if
+    TOKEN_OR,              // or
+    TOKEN_PRINT,           // print
+    TOKEN_TRUE,            // true
+    TOKEN_VAR,             // var
+    TOKEN_WHILE,           // while
 
     TOKEN_ERROR,           // ERROR
 } TokenType;
