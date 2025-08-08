@@ -66,11 +66,6 @@ static void skip_whitespace() {
             case '\n':
                 advance();
                 break;
-            case '/':
-                if (advance_if('/')) {
-                    while (peek() != '\n' && !is_at_end()) advance();
-                }
-                break;
             default:
                 return;
         }
