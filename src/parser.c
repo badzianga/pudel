@@ -50,7 +50,6 @@ static ASTNode* make_node_program() {
 }
 
 static ASTNode* make_node_variable_declaration(char* name, ASTNode* initializer) {
-    // TODO: check if variable already exists during parsing
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_VARIABLE_DECLARATION;
     node->variable_declaration.name = name;
@@ -110,7 +109,6 @@ static ASTNode* make_node_block_filled_with(int argc, ...) {
 }
 
 static ASTNode* make_node_assignment(char* name, TokenType op, ASTNode* value) {
-    // TODO: check if variable exists during parsing
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_ASSIGNMENT;
     node->assignment.name = name;
@@ -425,6 +423,9 @@ static ASTNode* parse_primary() {
     }
     if (match(1, TOKEN_FALSE)) {
         return make_node_literal(BOOL_VALUE(false));
+    }
+    if (match(1, TOKEN_NULL)) {
+        return make_node_literal(NULL_VALUE());
     }
     if (match(1, TOKEN_LEFT_PAREN)) {
         ASTNode* inside = parse_expression();
