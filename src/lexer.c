@@ -119,7 +119,7 @@ static Token read_identifier() {
             }
         }
         if (might_be_keyword) {
-            return make_token(TOKEN_VAR + i);
+            return make_token(TOKEN_AND + i);
         }
     }
     return make_token(TOKEN_IDENTIFIER);
