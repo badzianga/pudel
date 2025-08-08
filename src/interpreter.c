@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +34,37 @@ static bool is_truthy(Value value) {
     return false;
 }
 
+static void runtime_error(const char* format, ...) {
+    fputs("runtime error: ", stderr);
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fputs("\n", stderr);
+
+    exit(1);
+}
+
+static void assert_number_operand(Value a) {
+    if (IS_NUMBER(a)) return;
+    runtime_error("operand must be a number");
+}
+
+static void assert_number_operands(Value a, Value b) {
+    if (IS_NUMBER(a) && IS_NUMBER(b)) return;
+    runtime_error("operands must be numbers");
+}
+
+static bool values_equal(Value a, Value b) {
+    if (a.type != b.type) return false;
+    switch (a.type) {
+        case VALUE_NULL: return true;
+        case VALUE_NUMBER: return a.number == b.number;
+        case VALUE_BOOL: return a.boolean == b.boolean;
+    }
+    return false;
+}
+
 Value interpreter_interpret(ASTNode* root) {
     switch (root->type) {
         case AST_NODE_PROGRAM: {
@@ -43,8 +74,7 @@ Value interpreter_interpret(ASTNode* root) {
         } break;
         case AST_NODE_VARIABLE_DECLARATION: {
             if (get_variable(root->variable_declaration.name) != NULL) {
-                fprintf(stderr, "error: redefinition of variable '%s'\n", root->variable_declaration.name);
-                exit(1);
+                runtime_error("redeclaration of variable '%s'", root->variable_declaration.name);
             }
             Value value = NULL_VALUE();
             if (root->variable_declaration.initializer != NULL) {
@@ -67,10 +97,7 @@ Value interpreter_interpret(ASTNode* root) {
                 case VALUE_BOOL: {
                     printf("%s\n", value.boolean ? "true" : "false");
                 } break;
-                default: {
-                    printf("interpreter::interpreter_interpret: invalid value type in print statement: %d\n", value.type);
-                    exit(1);
-                } break;
+                default: break;
             }
         } break;
         case AST_NODE_IF_STATEMENT: {
@@ -96,39 +123,34 @@ Value interpreter_interpret(ASTNode* root) {
         case AST_NODE_ASSIGNMENT: {
             Variable* var = get_variable(root->assignment.name);
             if (var == NULL) {
-                fprintf(stderr, "error: undeclared identifier '%s'\n", root->assignment.name);
-                exit(1);
+                runtime_error("undeclared identifier '%s'", root->assignment.name);
             }
             Value value = interpreter_interpret(root->assignment.value);
-            // TODO: do these ops only for number values
             switch(root->assignment.op) {
                 case TOKEN_PLUS_EQUAL: {
+                    assert_number_operands(var->value, value);
                     var->value.number += value.number;
                 } break;
                 case TOKEN_MINUS_EQUAL: {
+                    assert_number_operands(var->value, value);
                     var->value.number -= value.number;
                 } break;
                 case TOKEN_ASTERISK_EQUAL: {
+                    assert_number_operands(var->value, value);
                     var->value.number *= value.number;
                 } break;
                 case TOKEN_SLASH_EQUAL: {
+                    assert_number_operands(var->value, value);
                     // TODO: check division by zero
                     var->value.number /= value.number;
                 } break;
                 case TOKEN_EQUAL: {
                     var->value = value;
                 } break;
-                default: {
-                    fprintf(
-                        stderr,
-                        "error: invalid operator in assignment operation: '%s'\n",
-                        token_as_cstr(root->assignment.op)
-                    );
-                    exit(1);
-                } break;
+                default: break;
             }
             return var->value;
-        } break;
+        }
         case AST_NODE_LOGICAL: {
             Value left = interpreter_interpret(root->binary.left);
             switch (root->binary.op) {
@@ -138,96 +160,81 @@ Value interpreter_interpret(ASTNode* root) {
                 case TOKEN_AND: {
                     if (!is_truthy(left)) return left;
                 } break;
-                default: {
-                    fprintf(
-                        stderr,
-                        "error: invalid operator in logical operation: '%s'\n",
-                        token_as_cstr(root->binary.op)
-                    );
-                    exit(1);
-                } break;
+                default: break;
             }
             return interpreter_interpret(root->binary.right);
-        } break;
+        }
         case AST_NODE_BINARY: {
             Value left = interpreter_interpret(root->binary.left);
             Value right = interpreter_interpret(root->binary.right);
 
-            // TODO: do these ops only for proper value types
             switch (root->binary.op) {
-                case TOKEN_PLUS:
+                case TOKEN_PLUS: {
+                    assert_number_operands(left, right);
                     return NUMBER_VALUE(left.number + right.number);
-                case TOKEN_MINUS:
+                }
+                case TOKEN_MINUS: {
+                    assert_number_operands(left, right);
                     return NUMBER_VALUE(left.number - right.number);
-                case TOKEN_ASTERISK:
+                }
+                case TOKEN_ASTERISK: {
+                    assert_number_operands(left, right);
                     return NUMBER_VALUE(left.number * right.number);
+                }
                 case TOKEN_SLASH: {
+                    assert_number_operands(left, right);
                     // TODO: check division by zero
                     return NUMBER_VALUE(left.number / right.number);
                 }
                 case TOKEN_EQUAL_EQUAL:
-                    return BOOL_VALUE(left.number == right.number);
+                    return BOOL_VALUE(values_equal(left, right));
                 case TOKEN_NOT_EQUAL:
-                    return BOOL_VALUE(left.number == right.number);
-                case TOKEN_GREATER:
+                    return BOOL_VALUE(!values_equal(left, right));
+                case TOKEN_GREATER: {
+                    assert_number_operands(left, right);
                     return BOOL_VALUE(left.number > right.number);
-                case TOKEN_GREATER_EQUAL:
-                    return BOOL_VALUE(left.number >= right.number);
-                case TOKEN_LESS:
-                    return BOOL_VALUE(left.number < right.number);
-                case TOKEN_LESS_EQUAL:
-                    return BOOL_VALUE(left.number <= right.number);
-                default: {
-                    fprintf(
-                        stderr,
-                        "error: invalid operator in binary operation: '%s'\n",
-                        token_as_cstr(root->binary.op)
-                    );
-                    exit(1);
                 }
+                case TOKEN_GREATER_EQUAL: {
+                    assert_number_operands(left, right);
+                    return BOOL_VALUE(left.number >= right.number);
+                }
+                case TOKEN_LESS: {
+                    assert_number_operands(left, right);
+                    return BOOL_VALUE(left.number < right.number);
+                }
+                case TOKEN_LESS_EQUAL: {
+                    assert_number_operands(left, right);
+                    return BOOL_VALUE(left.number <= right.number);
+                }
+                default: break;
             }
         } break;
         case AST_NODE_UNARY: {
             Value value = interpreter_interpret(root->unary.right);
 
-            // TODO: check types
             switch (root->unary.op) {
                 case TOKEN_MINUS: {
+                    assert_number_operand(value);
                     value.number = -value.number;
                     return value;
-                } break;
+                }
                 case TOKEN_NOT: {
                     return BOOL_VALUE(!is_truthy(value));
-                } break;
-                default: {
-                    fprintf(
-                        stderr,
-                        "error: invalid operator in unary operation: '%s'\n",
-                        token_as_cstr(root->unary.op)
-                    );
-                    exit(1);
                 }
+                default: break;
             }
-        } break;
+            return NULL_VALUE();
+        }
         case AST_NODE_LITERAL: {
             return root->literal;
-        } break;
+        }
         case AST_NODE_VARIABLE: {
             Variable* var = get_variable(root->name);
             if (var == NULL) {
-                fprintf(stderr, "error: undeclared identifier '%s'\n", root->name);
-                exit(1);
+                runtime_error("undeclared identifier '%s'\n", root->name);
             }
             return var->value;
-        } break;
-        default: {
-            fprintf(
-                stderr,
-                "interpreter::interpreter_interpret: unknown AST node type with value: %d\n",
-                root->type
-            );
-            exit(1);
-        } break;
+        }
     }
-    return (Value) { 0 };
+    return NULL_VALUE();
 }

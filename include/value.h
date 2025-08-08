@@ -1,6 +1,5 @@
 #pragma once
 #include <stdbool.h>
-#include <stdint.h>
 
 typedef enum ValueType {
     VALUE_NULL,
@@ -15,6 +14,10 @@ typedef struct Value {
         bool boolean;
     };
 } Value;
+
+#define IS_NULL(value)      (value.type == VALUE_NULL)
+#define IS_NUMBER(value)    (value.type == VALUE_NUMBER)
+#define IS_BOOL(value)      (value.type == VALUE_BOOL)
 
 #define NULL_VALUE()        ((Value){ .type = VALUE_NULL,   .number = 0 })
 #define NUMBER_VALUE(value) ((Value){ .type = VALUE_NUMBER, .number = value })
