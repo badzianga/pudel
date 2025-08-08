@@ -62,6 +62,25 @@ inline static Token* previous() {
     return parser.current - 1;
 }
 
+static void synchronize() {
+    parser.panic_mode = false;
+
+    while (parser.current->type != TOKEN_EOF) {
+        if (previous()->type == TOKEN_SEMICOLON) return;
+        switch (parser.current->type) {
+            case TOKEN_VAR:
+            case TOKEN_FOR:
+            case TOKEN_IF:
+            case TOKEN_WHILE:
+            case TOKEN_PRINT:
+                return;
+            default:
+                ;
+        }
+        ++parser.current;
+    }
+}
+
 static ASTNode* make_node_program() {
     ASTNode* node = calloc(1, sizeof(ASTNode));
     node->type = AST_NODE_PROGRAM;
@@ -201,8 +220,10 @@ static ASTNode* parse_primary();
 static ASTNode* parse_program() {
     ASTNode* node = make_node_program();
     while (parser.current->type != TOKEN_EOF) {
-        // TODO: implement synchronization after error
-        if (parser.had_error) break;
+        if (parser.panic_mode) {
+            synchronize();
+            continue;
+        }
 
         if (node->block.capacity < node->block.count + 1) {
             node->block.capacity = GROW_CAPACITY(node->block.capacity);
