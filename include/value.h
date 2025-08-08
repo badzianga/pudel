@@ -3,23 +3,19 @@
 #include <stdint.h>
 
 typedef enum ValueType {
-    VALUE_NONE,
-    VALUE_INT,
-    VALUE_FLOAT,
+    VALUE_NULL,
+    VALUE_NUMBER,
     VALUE_BOOL,
 } ValueType;
 
 typedef struct Value {
     ValueType type;
     union {
-        int64_t int_;
-        double float_;
-        bool bool_;
+        double number;
+        bool boolean;
     };
 } Value;
 
-#define INT_VALUE(value) ((Value) { .type = VALUE_INT, .int_ = value })
-#define FLOAT_VALUE(value) ((Value) { .type = VALUE_FLOAT, .float_ = value })
-#define BOOL_VALUE(value) ((Value) { .type = VALUE_BOOL, .bool_ = value })
-
-const char* value_type_as_cstr(ValueType type);
+#define NULL_VALUE()        ((Value){ .type = VALUE_NULL,   .number = 0 })
+#define NUMBER_VALUE(value) ((Value){ .type = VALUE_NUMBER, .number = value })
+#define BOOL_VALUE(value)   ((Value){ .type = VALUE_BOOL,   .boolean = value })

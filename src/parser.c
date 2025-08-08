@@ -1,6 +1,5 @@
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,24 +14,7 @@ typedef struct Parser {
     int count;
 } Parser;
 
-typedef struct Symbol {
-    const char* name;
-    ValueType type;
-} Symbol;
-
 static Parser parser;
-static Symbol symbols[128] = { 0 };
-static int symbol_count = 0;
-
-static ValueType get_symbol_type(const char* name) {
-    const Symbol* end = symbols + symbol_count;
-    for (Symbol* symbol = symbols; symbol != end; ++symbol) {
-        if (strcmp(symbol->name, name) == 0) {
-            return symbol->type;
-        }
-    }
-    return VALUE_NONE;
-}
 
 static bool match(int argc, ...) {
     TokenType token = parser.current->type;
@@ -64,28 +46,21 @@ inline static Token* previous() {
 static ASTNode* make_node_program() {
     ASTNode* node = calloc(1, sizeof(ASTNode));
     node->type = AST_NODE_PROGRAM;
-    node->inferred_type = VALUE_NONE;
     return node;
 }
 
-static ASTNode* make_node_variable_declaration(char* name, ValueType type, ASTNode* initializer) {
+static ASTNode* make_node_variable_declaration(char* name, ASTNode* initializer) {
     // TODO: check if variable already exists during parsing
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_VARIABLE_DECLARATION;
-    node->inferred_type = type;
     node->variable_declaration.name = name;
-    node->variable_declaration.type = type;
     node->variable_declaration.initializer = initializer;
-
-    symbols[symbol_count++] = (Symbol) { .name = name, .type = type };
-
     return node;
 }
 
 static ASTNode* make_node_expression_statement(ASTNode* expression) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_EXPRESSION_STATEMENT;
-    node->inferred_type = expression->inferred_type;
     node->expression = expression;
     return node;
 }
@@ -93,7 +68,6 @@ static ASTNode* make_node_expression_statement(ASTNode* expression) {
 static ASTNode* make_node_print_statement(ASTNode* expression) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_PRINT_STATEMENT;
-    node->inferred_type = VALUE_NONE;
     node->expression = expression;
     return node;
 }
@@ -101,7 +75,6 @@ static ASTNode* make_node_print_statement(ASTNode* expression) {
 static ASTNode* make_node_if_statement(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_IF_STATEMENT;
-    node->inferred_type = VALUE_NONE;
     node->if_statement.condition = condition;
     node->if_statement.then_branch = then_branch;
     node->if_statement.else_branch = else_branch;
@@ -111,7 +84,6 @@ static ASTNode* make_node_if_statement(ASTNode* condition, ASTNode* then_branch,
 static ASTNode* make_node_while_statement(ASTNode* condition, ASTNode* body) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_WHILE_STATEMENT;
-    node->inferred_type = VALUE_NONE;
     node->while_statement.condition = condition;
     node->while_statement.body = body;
     return node;
@@ -120,19 +92,18 @@ static ASTNode* make_node_while_statement(ASTNode* condition, ASTNode* body) {
 static ASTNode* make_node_block() {
     ASTNode* node = calloc(1, sizeof(ASTNode));
     node->type = AST_NODE_BLOCK;
-    node->inferred_type = VALUE_NONE;
     return node;
 }
 
 static ASTNode* make_node_block_filled_with(int argc, ...) {
     ASTNode* node = make_node_block();
-    node->scope.capacity = argc;
-    node->scope.statements = GROW_ARRAY(ASTNode*, node->scope.statements, 0, node->scope.capacity);
+    node->block.capacity = argc;
+    node->block.statements = GROW_ARRAY(ASTNode*, node->block.statements, node->block.capacity);
 
     va_list argv;
     va_start(argv, argc);
     for (int i = 0; i < argc; ++i) {
-        node->scope.statements[node->scope.count++] = va_arg(argv, ASTNode*);
+        node->block.statements[node->block.count++] = va_arg(argv, ASTNode*);
     }
     va_end(argv);
     return node;
@@ -142,7 +113,6 @@ static ASTNode* make_node_assignment(char* name, TokenType op, ASTNode* value) {
     // TODO: check if variable exists during parsing
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_ASSIGNMENT;
-    node->inferred_type = get_symbol_type(name);
     node->assignment.name = name;
     node->assignment.op = op;
     node->assignment.value = value;
@@ -152,7 +122,6 @@ static ASTNode* make_node_assignment(char* name, TokenType op, ASTNode* value) {
 static ASTNode* make_node_logical(ASTNode* left, TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_LOGICAL;
-    node->inferred_type = VALUE_BOOL;
     node->binary.left = left;
     node->binary.op = op;
     node->binary.right = right;
@@ -162,16 +131,6 @@ static ASTNode* make_node_logical(ASTNode* left, TokenType op, ASTNode* right) {
 static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_BINARY;
-
-    ValueType lt = left->inferred_type;
-    ValueType rt = right->inferred_type;
-
-    ValueType result_type = VALUE_NONE;
-    if (lt == VALUE_FLOAT || rt == VALUE_FLOAT) result_type = VALUE_FLOAT;
-    else if (lt == VALUE_INT || rt == VALUE_INT) result_type = VALUE_INT;
-    else result_type = VALUE_BOOL;
-
-    node->inferred_type = result_type;
     node->binary.left = left;
     node->binary.op = op;
     node->binary.right = right;
@@ -181,15 +140,6 @@ static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
 static ASTNode* make_node_unary(TokenType op, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_UNARY;
-    switch (op) {
-        case TOKEN_MINUS: {
-            node->inferred_type = (right->inferred_type == VALUE_BOOL) ? VALUE_INT : right->inferred_type;
-        } break;
-        case TOKEN_NOT: {
-            node->inferred_type = VALUE_BOOL;
-        }
-        default: break;
-    }
     node->unary.op = op;
     node->unary.right = right;
     return node;
@@ -198,7 +148,6 @@ static ASTNode* make_node_unary(TokenType op, ASTNode* right) {
 static ASTNode* make_node_literal(Value value) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_LITERAL;
-    node->inferred_type = value.type;
     node->literal = value;
     return node;
 }
@@ -206,7 +155,6 @@ static ASTNode* make_node_literal(Value value) {
 static ASTNode* make_node_variable(char* name) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_VARIABLE;
-    node->inferred_type = get_symbol_type(name);
     node->name = name;
     return node;
 }
@@ -224,8 +172,8 @@ static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
 static ASTNode* parse_assignment();
-static ASTNode* parse_logical_or();
-static ASTNode* parse_logical_and();
+static ASTNode* parse_or();
+static ASTNode* parse_and();
 static ASTNode* parse_equality();
 static ASTNode* parse_comparison();
 static ASTNode* parse_term();
@@ -236,12 +184,11 @@ static ASTNode* parse_primary();
 static ASTNode* parse_program() {
     ASTNode* node = make_node_program();
     while (parser.current->type != TOKEN_EOF) {
-        if (node->scope.capacity < node->scope.count + 1) {
-            int old_capacity = node->scope.capacity;
-            node->scope.capacity = GROW_CAPACITY(old_capacity);
-            node->scope.statements = GROW_ARRAY(ASTNode*, node->scope.statements, old_capacity, node->scope.capacity);
+        if (node->block.capacity < node->block.count + 1) {
+            node->block.capacity = GROW_CAPACITY(node->block.capacity);
+            node->block.statements = GROW_ARRAY(ASTNode*, node->block.statements, node->block.capacity);
         }
-        node->scope.statements[node->scope.count++] = parse_declaration();
+        node->block.statements[node->block.count++] = parse_declaration();
     }
     return node;
 }
@@ -257,45 +204,13 @@ static ASTNode* parse_variable_declaration() {
     consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
     char* name = strndup(previous()->value, previous()->length);
 
-    ValueType type = VALUE_NONE;
-    if (match(1, TOKEN_COLON)) {
-        switch (parser.current->type) {
-            case TOKEN_INT: {
-                type = VALUE_INT;
-            } break;
-            case TOKEN_FLOAT: {
-                type = VALUE_FLOAT;
-            } break;
-            case TOKEN_BOOL: {
-                type = VALUE_BOOL;
-            } break;
-            default: {
-                fprintf(stderr, "error: expected type after ':'\n");
-                exit(1);
-            } break;
-        }
-        ++parser.current;
-    }
-    else if (match(1, TOKEN_COLON_EQUAL)) {
-        ASTNode* initializer = parse_expression();
-
-        type = initializer->inferred_type;
-
-        consume_expected(TOKEN_SEMICOLON, "expected ';' after variable declaration");
-        return make_node_variable_declaration(name, type, initializer);
-    }
-    else {
-        fprintf(stderr, "error: expected variable type\n");
-        exit(1);
-    }
-
     ASTNode* initializer = NULL;
     if (match(1, TOKEN_EQUAL)) {
         initializer = parse_expression();
     }
 
     consume_expected(TOKEN_SEMICOLON, "expected ';' after variable declaration");
-    return make_node_variable_declaration(name, type, initializer);
+    return make_node_variable_declaration(name, initializer);
 }
 
 static ASTNode* parse_statement() {
@@ -398,12 +313,11 @@ static ASTNode* parse_for_statement() {
 static ASTNode* parse_block() {
     ASTNode* node = make_node_block();
     while (parser.current->type != TOKEN_RIGHT_BRACE && parser.current->type != TOKEN_EOF) {
-        if (node->scope.capacity < node->scope.count + 1) {
-            int old_capacity = node->scope.capacity;
-            node->scope.capacity = GROW_CAPACITY(old_capacity);
-            node->scope.statements = GROW_ARRAY(ASTNode*, node->scope.statements, old_capacity, node->scope.capacity);
+        if (node->block.capacity < node->block.count + 1) {
+            node->block.capacity = GROW_CAPACITY(node->block.capacity);
+            node->block.statements = GROW_ARRAY(ASTNode*, node->block.statements, node->block.capacity);
         }
-        node->scope.statements[node->scope.count++] = parse_statement();
+        node->block.statements[node->block.count++] = parse_statement();
     }
     return node;
 }
@@ -413,9 +327,9 @@ static ASTNode* parse_expression() {
 }
 
 static ASTNode* parse_assignment() {
-    ASTNode* expression = parse_logical_or();
+    ASTNode* expression = parse_or();
 
-    if (match(6, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL, TOKEN_PERCENT_EQUAL)) {
+    if (match(6, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL)) {
         TokenType op = previous()->type;
         ASTNode* value = parse_assignment();
         
@@ -429,20 +343,20 @@ static ASTNode* parse_assignment() {
     return expression;
 }
 
-static ASTNode* parse_logical_or() {
-    ASTNode* left = parse_logical_and();
-    while (match(1, TOKEN_LOGICAL_OR)) {
-        ASTNode* right = parse_logical_and();
-        left = make_node_logical(left, TOKEN_LOGICAL_OR, right);
+static ASTNode* parse_or() {
+    ASTNode* left = parse_and();
+    while (match(1, TOKEN_OR)) {
+        ASTNode* right = parse_and();
+        left = make_node_logical(left, TOKEN_OR, right);
     }
     return left;
 }
 
-static ASTNode* parse_logical_and() {
+static ASTNode* parse_and() {
     ASTNode* left = parse_equality();
-    while (match(1, TOKEN_LOGICAL_AND)) {
+    while (match(1, TOKEN_AND)) {
         ASTNode* right = parse_equality();
-        left = make_node_logical(left, TOKEN_LOGICAL_AND, right);
+        left = make_node_logical(left, TOKEN_AND, right);
     }
     return left;
 }
@@ -479,7 +393,7 @@ static ASTNode* parse_term() {
 
 static ASTNode* parse_factor() {
     ASTNode* left = parse_unary();
-    while (match(3, TOKEN_ASTERISK, TOKEN_SLASH, TOKEN_PERCENT)) {
+    while (match(3, TOKEN_ASTERISK, TOKEN_SLASH)) {
         TokenType op = previous()->type;
         ASTNode* right = parse_unary();
         left = make_node_binary(left, op, right);
@@ -497,17 +411,14 @@ static ASTNode* parse_unary() {
 }
 
 static ASTNode* parse_primary() {
+    // TODO: add token and parse null
     if (match(1, TOKEN_IDENTIFIER)) {
         char* name = strndup(previous()->value, previous()->length);
         return make_node_variable(name);
     }
-    if (match(1, TOKEN_INT_LITERAL)) {
-        int64_t value = strtoll(previous()->value, NULL, 10);
-        return make_node_literal(INT_VALUE(value));
-    }
-    if (match(1, TOKEN_FLOAT_LITERAL)) {
+    if (match(1, TOKEN_NUMBER)) {
         double value = strtod(previous()->value, NULL);
-        return make_node_literal(FLOAT_VALUE(value));
+        return make_node_literal(NUMBER_VALUE(value));
     }
     if (match(1, TOKEN_TRUE)) {
         return make_node_literal(BOOL_VALUE(true));
@@ -541,10 +452,10 @@ ASTNode* parser_parse(TokenArray* token_array) {
 void parser_free_ast(ASTNode* root) {
     switch (root->type) {
         case AST_NODE_PROGRAM: {
-            for (int i = 0; i < root->scope.count; ++i) {
-                free(root->scope.statements[i]);
+            for (int i = 0; i < root->block.count; ++i) {
+                free(root->block.statements[i]);
             }
-            free(root->scope.statements);
+            free(root->block.statements);
         } break;
         case AST_NODE_VARIABLE_DECLARATION: {
             free(root->variable_declaration.name);
@@ -566,10 +477,10 @@ void parser_free_ast(ASTNode* root) {
             free(root->while_statement.body);
         } break;
         case AST_NODE_BLOCK: {
-            for (int i = 0; i < root->scope.count; ++i) {
-                free(root->scope.statements[i]);
+            for (int i = 0; i < root->block.count; ++i) {
+                free(root->block.statements[i]);
             }
-            free(root->scope.statements);
+            free(root->block.statements);
         } break;
         case AST_NODE_ASSIGNMENT: {
             free(root->assignment.name);

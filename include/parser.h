@@ -21,7 +21,6 @@ typedef enum ASTNodeType {
 
 typedef struct ASTNode {
     ASTNodeType type;
-    ValueType inferred_type;
 
     union {
         // program, block
@@ -29,7 +28,7 @@ typedef struct ASTNode {
             struct ASTNode** statements;
             int count;
             int capacity;
-        } scope;
+        } block;
 
         // var decl
         struct {
