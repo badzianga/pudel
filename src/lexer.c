@@ -24,9 +24,6 @@ static char peek() {
 }
 
 static char advance() {
-    if (*lexer.current == '\n') {
-        lexer.line++;
-    }
     return *lexer.current++;
 }
 
@@ -63,7 +60,10 @@ static void skip_whitespace() {
             case ' ':
             case '\t':
             case '\r':
+                advance();
+                break;
             case '\n':
+                ++lexer.line;
                 advance();
                 break;
             default:
