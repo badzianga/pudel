@@ -10,11 +10,30 @@
 
 typedef struct Parser {
     Token* tokens;
-    Token* current;
     int count;
+    Token* current;
+    bool had_error;
+    bool panic_mode;
 } Parser;
 
 static Parser parser;
+
+static void error_at(Token* token, const char* message) {
+    if (parser.panic_mode) return;
+    parser.had_error = true;
+    parser.panic_mode = true;
+    fprintf(stderr, "[line %d] error", token->line);
+
+    if (token->type == TOKEN_EOF) {
+        fprintf(stderr, " at end");
+    }
+    else if (token->type == TOKEN_ERROR) {}
+    else {
+        fprintf(stderr, " at '%.*s'", token->length, token->value);
+    }
+
+    fprintf(stderr, ": %s\n", message);
+}
 
 static bool match(int argc, ...) {
     TokenType token = parser.current->type;
@@ -33,8 +52,8 @@ static bool match(int argc, ...) {
 
 static void consume_expected(TokenType token, const char* error_if_fail) {
     if (parser.current->type != token) {
-        fprintf(stderr, "error: %s\n", error_if_fail);
-        exit(1);
+        error_at(parser.current, error_if_fail);
+        return;
     }
     ++parser.current;
 }
@@ -182,6 +201,9 @@ static ASTNode* parse_primary();
 static ASTNode* parse_program() {
     ASTNode* node = make_node_program();
     while (parser.current->type != TOKEN_EOF) {
+        // TODO: implement synchronization after error
+        if (parser.had_error) break;
+
         if (node->block.capacity < node->block.count + 1) {
             node->block.capacity = GROW_CAPACITY(node->block.capacity);
             node->block.statements = GROW_ARRAY(ASTNode*, node->block.statements, node->block.capacity);
@@ -328,14 +350,14 @@ static ASTNode* parse_assignment() {
     ASTNode* expression = parse_or();
 
     if (match(6, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL)) {
-        TokenType op = previous()->type;
+        Token* op_token = previous();
         ASTNode* value = parse_assignment();
         
         if (expression->type == AST_NODE_VARIABLE) {
-            return make_node_assignment(expression->name, op, value);
+            return make_node_assignment(expression->name, op_token->type, value);
         }
 
-        fprintf(stderr, "error: invalid assignment target\n");
+        error_at(op_token, "invalid assignment target");
     }
 
     return expression;
@@ -433,20 +455,24 @@ static ASTNode* parse_primary() {
     }
 
     if (parser.current->type == TOKEN_ERROR) {
-        fprintf(stderr, "error: %.*s\n", parser.current->length, parser.current->value);
+        error_at(parser.current, parser.current->value);
     }
     else {
-        fprintf(stderr, "error: unexpected value: '%.*s'\n", parser.current->length, parser.current->value);
+        error_at(parser.current, "unexpected value");
     }
-    exit(1);
+    return NULL;
 }
 
-ASTNode* parser_parse(TokenArray* token_array) {
+bool parser_parse(TokenArray* token_array, ASTNode** output) {
     parser.tokens = token_array->tokens;
     parser.count = token_array->count;
     parser.current = parser.tokens;
+    parser.had_error = false;
+    parser.panic_mode = false;
 
-    return parse_program();
+    *output = parse_program();
+
+    return !parser.had_error;
 }
 
 void parser_free_ast(ASTNode* root) {
@@ -500,10 +526,6 @@ void parser_free_ast(ASTNode* root) {
         case AST_NODE_LITERAL: break;
         case AST_NODE_VARIABLE: {
             free(root->name);
-        } break;
-        default: {
-            fprintf(stderr, "parser::parser_free_ast: unknown AST node type with value: %d\n", root->type);
-            exit(1);
         } break;
     }
     free(root);

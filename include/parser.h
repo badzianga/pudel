@@ -81,5 +81,5 @@ typedef struct ASTNode {
     };
 } ASTNode;
 
-ASTNode* parser_parse(TokenArray* token_array);
+bool parser_parse(TokenArray* token_array, ASTNode** output);
 void parser_free_ast(ASTNode* root);

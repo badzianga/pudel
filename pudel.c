@@ -18,7 +18,13 @@ int main(int argc, char** argv) {
 
     printf("----------------------------------------------------------------\n");
 
-    ASTNode* ast = parser_parse(&token_array);
+    ASTNode* ast;
+    if (!parser_parse(&token_array, &ast)) {
+        // don't free ast, because it might be corrupted
+        lexer_free_tokens(&token_array);
+        free(source);
+        return 1;
+    }
     debug_print_ast(ast, 0);
 
     printf("----------------------------------------------------------------\n");
