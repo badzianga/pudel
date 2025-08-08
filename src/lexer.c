@@ -34,7 +34,6 @@ static bool advance_if(char expected) {
     return true;
 }
 
-// TODO: EOF token is not created when newline is not present at the end
 static Token make_token(TokenType type) {
     return (Token) {
         .type = type,
@@ -173,12 +172,15 @@ TokenArray lexer_lex(const char* source) {
 
     TokenArray array = { 0 };
 
-    while (!is_at_end()) {
+    for (;;) {
         if (array.capacity < array.count + 1) {
             array.capacity = GROW_CAPACITY(array.capacity);
             array.tokens = GROW_ARRAY(Token, array.tokens, array.capacity);
         }
-        array.tokens[array.count++] = next_token();
+        Token token = next_token();
+        array.tokens[array.count++] = token;
+
+        if (token.type == TOKEN_EOF) break;
     }
     return array;
 }
