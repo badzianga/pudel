@@ -141,7 +141,7 @@ Value interpreter_interpret(ASTNode* root) {
                 } break;
                 case TOKEN_SLASH_EQUAL: {
                     assert_number_operands(var->value, value);
-                    // TODO: check division by zero
+                    if (value.number == 0.0) runtime_error("cannot divide by zero");
                     var->value.number /= value.number;
                 } break;
                 case TOKEN_EQUAL: {
@@ -183,7 +183,7 @@ Value interpreter_interpret(ASTNode* root) {
                 }
                 case TOKEN_SLASH: {
                     assert_number_operands(left, right);
-                    // TODO: check division by zero
+                    if (right.number == 0.0) runtime_error("cannot divide by zero");
                     return NUMBER_VALUE(left.number / right.number);
                 }
                 case TOKEN_EQUAL_EQUAL:
