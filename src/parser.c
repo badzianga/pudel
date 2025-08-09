@@ -82,117 +82,117 @@ static void synchronize() {
 }
 
 static ASTNode* make_node_program() {
-    ASTNode* node = calloc(1, sizeof(ASTNode));
-    node->type = AST_NODE_PROGRAM;
-    return node;
-}
-
-static ASTNode* make_node_variable_declaration(char* name, ASTNode* initializer) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_VARIABLE_DECLARATION;
-    node->variable_declaration.name = name;
-    node->variable_declaration.initializer = initializer;
-    return node;
-}
-
-static ASTNode* make_node_expression_statement(ASTNode* expression) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_EXPRESSION_STATEMENT;
-    node->expression = expression;
-    return node;
-}
-
-static ASTNode* make_node_print_statement(ASTNode* expression) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_PRINT_STATEMENT;
-    node->expression = expression;
-    return node;
-}
-
-static ASTNode* make_node_if_statement(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_IF_STATEMENT;
-    node->if_statement.condition = condition;
-    node->if_statement.then_branch = then_branch;
-    node->if_statement.else_branch = else_branch;
-    return node;
-}
-
-static ASTNode* make_node_while_statement(ASTNode* condition, ASTNode* body) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_WHILE_STATEMENT;
-    node->while_statement.condition = condition;
-    node->while_statement.body = body;
-    return node;
+    ASTNodeBlock* node = calloc(1, sizeof(ASTNodeBlock));
+    node->base.type = AST_NODE_PROGRAM;
+    return (ASTNode*)node;
 }
 
 static ASTNode* make_node_block() {
-    ASTNode* node = calloc(1, sizeof(ASTNode));
-    node->type = AST_NODE_BLOCK;
-    return node;
+    ASTNodeBlock* node = calloc(1, sizeof(ASTNodeBlock));
+    node->base.type = AST_NODE_BLOCK;
+    return (ASTNode*)node;
 }
 
 static ASTNode* make_node_block_filled_with(int argc, ...) {
-    ASTNode* node = make_node_block();
-    node->block.capacity = argc;
-    node->block.statements = GROW_ARRAY(ASTNode*, node->block.statements, node->block.capacity);
+    ASTNodeBlock* node = (ASTNodeBlock*)make_node_block();
+    node->capacity = argc;
+    node->statements = GROW_ARRAY(ASTNode*, node->statements, node->capacity);
 
     va_list argv;
     va_start(argv, argc);
     for (int i = 0; i < argc; ++i) {
-        node->block.statements[node->block.count++] = va_arg(argv, ASTNode*);
+        node->statements[node->count++] = va_arg(argv, ASTNode*);
     }
     va_end(argv);
-    return node;
+    return (ASTNode*)node;
+}
+
+static ASTNode* make_node_var_decl(char* name, ASTNode* initializer) {
+    ASTNodeVarDecl* node = malloc(sizeof(ASTNodeVarDecl));
+    node->base.type = AST_NODE_VAR_DECL;
+    node->name = name;
+    node->initializer = initializer;
+    return (ASTNode*)node;
+}
+
+static ASTNode* make_node_expr_stmt(ASTNode* expression) {
+    ASTNodeExprStmt* node = malloc(sizeof(ASTNodeExprStmt));
+    node->base.type = AST_NODE_EXPR_STMT;
+    node->expression = expression;
+    return (ASTNode*)node;
+}
+
+static ASTNode* make_node_print_stmt(ASTNode* expression) {
+    ASTNodeExprStmt* node = malloc(sizeof(ASTNodeExprStmt));
+    node->base.type = AST_NODE_PRINT_STMT;
+    node->expression = expression;
+    return (ASTNode*)node;
+}
+
+static ASTNode* make_node_if_stmt(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
+    ASTNodeIfStmt* node = malloc(sizeof(ASTNodeIfStmt));
+    node->base.type = AST_NODE_IF_STMT;
+    node->condition = condition;
+    node->then_branch = then_branch;
+    node->else_branch = else_branch;
+    return (ASTNode*)node;
+}
+
+static ASTNode* make_node_while_stmt(ASTNode* condition, ASTNode* body) {
+    ASTNodeWhileStmt* node = malloc(sizeof(ASTNodeWhileStmt));
+    node->base.type = AST_NODE_WHILE_STMT;
+    node->condition = condition;
+    node->body = body;
+    return (ASTNode*)node;
 }
 
 static ASTNode* make_node_assignment(char* name, TokenType op, ASTNode* value) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_ASSIGNMENT;
-    node->assignment.name = name;
-    node->assignment.op = op;
-    node->assignment.value = value;
-    return node;
+    ASTNodeAssignment* node = malloc(sizeof(ASTNodeAssignment));
+    node->base.type = AST_NODE_ASSIGNMENT;
+    node->name = name;
+    node->op = op;
+    node->value = value;
+    return (ASTNode*)node;
 }
 
 static ASTNode* make_node_logical(ASTNode* left, TokenType op, ASTNode* right) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_LOGICAL;
-    node->binary.left = left;
-    node->binary.op = op;
-    node->binary.right = right;
-    return node;
+    ASTNodeBinary* node = malloc(sizeof(ASTNodeBinary));
+    node->base.type = AST_NODE_LOGICAL;
+    node->left = left;
+    node->op = op;
+    node->right = right;
+    return (ASTNode*)node;
 }
 
 static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_BINARY;
-    node->binary.left = left;
-    node->binary.op = op;
-    node->binary.right = right;
-    return node;
+    ASTNodeBinary* node = malloc(sizeof(ASTNodeBinary));
+    node->base.type = AST_NODE_BINARY;
+    node->left = left;
+    node->op = op;
+    node->right = right;
+    return (ASTNode*)node;
 }
 
 static ASTNode* make_node_unary(TokenType op, ASTNode* right) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_UNARY;
-    node->unary.op = op;
-    node->unary.right = right;
-    return node;
+    ASTNodeUnary* node = malloc(sizeof(ASTNodeUnary));
+    node->base.type = AST_NODE_UNARY;
+    node->op = op;
+    node->right = right;
+    return (ASTNode*)node;
 }
 
 static ASTNode* make_node_literal(Value value) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_LITERAL;
-    node->literal = value;
-    return node;
+    ASTNodeLiteral* node = malloc(sizeof(ASTNodeLiteral));
+    node->base.type = AST_NODE_LITERAL;
+    node->value = value;
+    return (ASTNode*)node;
 }
 
-static ASTNode* make_node_variable(char* name) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = AST_NODE_VARIABLE;
+static ASTNode* make_node_var(char* name) {
+    ASTNodeVar* node = malloc(sizeof(ASTNodeVar));
+    node->base.type = AST_NODE_VAR;
     node->name = name;
-    return node;
+    return (ASTNode*)node;
 }
 
 static ASTNode* parse_program();
@@ -218,20 +218,20 @@ static ASTNode* parse_unary();
 static ASTNode* parse_primary();
 
 static ASTNode* parse_program() {
-    ASTNode* node = make_node_program();
+    ASTNodeBlock* block = (ASTNodeBlock*)make_node_program();
     while (parser.current->type != TOKEN_EOF) {
         if (parser.panic_mode) {
             synchronize();
             continue;
         }
 
-        if (node->block.capacity < node->block.count + 1) {
-            node->block.capacity = GROW_CAPACITY(node->block.capacity);
-            node->block.statements = GROW_ARRAY(ASTNode*, node->block.statements, node->block.capacity);
+        if (block->capacity < block->count + 1) {
+            block->capacity = GROW_CAPACITY(block->capacity);
+            block->statements = GROW_ARRAY(ASTNode*, block->statements, block->capacity);
         }
-        node->block.statements[node->block.count++] = parse_declaration();
+        block->statements[block->count++] = parse_declaration();
     }
-    return node;
+    return (ASTNode*)block;
 }
 
 static ASTNode* parse_declaration() {
@@ -251,7 +251,7 @@ static ASTNode* parse_variable_declaration() {
     }
 
     consume_expected(TOKEN_SEMICOLON, "expected ';' after variable declaration");
-    return make_node_variable_declaration(name, initializer);
+    return make_node_var_decl(name, initializer);
 }
 
 static ASTNode* parse_statement() {
@@ -272,13 +272,13 @@ static ASTNode* parse_statement() {
 static ASTNode* parse_expression_statement() {
     ASTNode* expression = parse_expression();
     consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
-    return make_node_expression_statement(expression);
+    return make_node_expr_stmt(expression);
 }
 
 static ASTNode* parse_print_statement() {
     ASTNode* expression = parse_expression();
     consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
-    return make_node_print_statement(expression);
+    return make_node_print_stmt(expression);
 }
 
 static ASTNode* parse_if_statement() {
@@ -292,7 +292,7 @@ static ASTNode* parse_if_statement() {
         else_branch = parse_statement();
     }
 
-    return make_node_if_statement(condition, then_branch, else_branch);
+    return make_node_if_stmt(condition, then_branch, else_branch);
 }
 
 static ASTNode* parse_while_statement() {
@@ -301,10 +301,10 @@ static ASTNode* parse_while_statement() {
     consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after 'while' condition");
 
     if (match(1, TOKEN_SEMICOLON)) {
-        return make_node_while_statement(condition, NULL);
+        return make_node_while_stmt(condition, NULL);
     }
     ASTNode* body = parse_statement();
-    return make_node_while_statement(condition, body);
+    return make_node_while_stmt(condition, body);
 }
 
 static ASTNode* parse_for_statement() {
@@ -336,13 +336,13 @@ static ASTNode* parse_for_statement() {
     ASTNode* body = parse_statement();
 
     if (increment != NULL) {
-        body = make_node_block_filled_with(2, body, make_node_expression_statement(increment));
+        body = make_node_block_filled_with(2, body, make_node_expr_stmt(increment));
     }
 
     if (condition == NULL) {
         condition = make_node_literal(BOOL_VALUE(true));
     }
-    body = make_node_while_statement(condition, body); 
+    body = make_node_while_stmt(condition, body); 
 
     if (initializer != NULL) {
         body = make_node_block_filled_with(2, initializer, body);
@@ -352,15 +352,15 @@ static ASTNode* parse_for_statement() {
 }
 
 static ASTNode* parse_block() {
-    ASTNode* node = make_node_block();
+    ASTNodeBlock* block = (ASTNodeBlock*)make_node_block();
     while (parser.current->type != TOKEN_RIGHT_BRACE && parser.current->type != TOKEN_EOF) {
-        if (node->block.capacity < node->block.count + 1) {
-            node->block.capacity = GROW_CAPACITY(node->block.capacity);
-            node->block.statements = GROW_ARRAY(ASTNode*, node->block.statements, node->block.capacity);
+        if (block->capacity < block->count + 1) {
+            block->capacity = GROW_CAPACITY(block->capacity);
+            block->statements = GROW_ARRAY(ASTNode*, block->statements, block->capacity);
         }
-        node->block.statements[node->block.count++] = parse_statement();
+        block->statements[block->count++] = parse_statement();
     }
-    return node;
+    return (ASTNode*)block;
 }
 
 static ASTNode* parse_expression() {
@@ -374,8 +374,8 @@ static ASTNode* parse_assignment() {
         Token* op_token = previous();
         ASTNode* value = parse_assignment();
         
-        if (expression->type == AST_NODE_VARIABLE) {
-            return make_node_assignment(expression->name, op_token->type, value);
+        if (expression->type == AST_NODE_VAR) {
+            return make_node_assignment(((ASTNodeVar*)expression)->name, op_token->type, value);
         }
 
         error_at(op_token, "invalid assignment target");
@@ -454,7 +454,7 @@ static ASTNode* parse_unary() {
 static ASTNode* parse_primary() {
     if (match(1, TOKEN_IDENTIFIER)) {
         char* name = strndup(previous()->value, previous()->length);
-        return make_node_variable(name);
+        return make_node_var(name);
     }
     if (match(1, TOKEN_NUMBER)) {
         double value = strtod(previous()->value, NULL);
@@ -498,55 +498,57 @@ bool parser_parse(TokenArray* token_array, ASTNode** output) {
 
 void parser_free_ast(ASTNode* root) {
     switch (root->type) {
-        case AST_NODE_PROGRAM: {
-            for (int i = 0; i < root->block.count; ++i) {
-                free(root->block.statements[i]);
-            }
-            free(root->block.statements);
-        } break;
-        case AST_NODE_VARIABLE_DECLARATION: {
-            free(root->variable_declaration.name);
-            free(root->variable_declaration.initializer);
-        } break;
-        case AST_NODE_EXPRESSION_STATEMENT: {
-            free(root->expression);
-        } break;
-        case AST_NODE_PRINT_STATEMENT: {
-            free(root->expression);
-        } break;
-        case AST_NODE_IF_STATEMENT: {
-            free(root->if_statement.condition);
-            free(root->if_statement.then_branch);
-            free(root->if_statement.else_branch);
-        } break;
-        case AST_NODE_WHILE_STATEMENT: {
-            free(root->while_statement.condition);
-            free(root->while_statement.body);
-        } break;
+        case AST_NODE_PROGRAM:
         case AST_NODE_BLOCK: {
-            for (int i = 0; i < root->block.count; ++i) {
-                free(root->block.statements[i]);
+            ASTNodeBlock* block = (ASTNodeBlock*)root;
+            for (int i = 0; i < block->count; ++i) {
+                free(block->statements[i]);
             }
-            free(root->block.statements);
+            free(block->statements);
+        } break;
+        case AST_NODE_VAR_DECL: {
+            ASTNodeVarDecl* var_decl = (ASTNodeVarDecl*)root;
+            free(var_decl->name);
+            free(var_decl->initializer);
+        } break;
+        case AST_NODE_EXPR_STMT: {
+            ASTNodeExprStmt* expr_stmt = (ASTNodeExprStmt*)root;
+            free(expr_stmt->expression);
+        } break;
+        case AST_NODE_PRINT_STMT: {
+            ASTNodeExprStmt* print_stmt = (ASTNodeExprStmt*)root;
+            free(print_stmt->expression);
+        } break;
+        case AST_NODE_IF_STMT: {
+            ASTNodeIfStmt* if_stmt = (ASTNodeIfStmt*)root;
+            free(if_stmt->condition);
+            free(if_stmt->then_branch);
+            free(if_stmt->else_branch);
+        } break;
+        case AST_NODE_WHILE_STMT: {
+            ASTNodeWhileStmt* while_stmt = (ASTNodeWhileStmt*)root;
+            free(while_stmt->condition);
+            free(while_stmt->body);
         } break;
         case AST_NODE_ASSIGNMENT: {
-            free(root->assignment.name);
-            free(root->assignment.value);
+            ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
+            free(assignment->name);
+            free(assignment->value);
         } break;
-        case AST_NODE_LOGICAL: {
-            free(root->binary.left);
-            free(root->binary.right);
-        } break;
+        case AST_NODE_LOGICAL:
         case AST_NODE_BINARY: {
-            free(root->binary.left);
-            free(root->binary.right);
+            ASTNodeBinary* binary = (ASTNodeBinary*)root;
+            free(binary->left);
+            free(binary->right);
         } break;
         case AST_NODE_UNARY: {
-            free(root->binary.right);
+            ASTNodeUnary* unary = (ASTNodeUnary*)root;
+            free(unary->right);
         } break;
         case AST_NODE_LITERAL: break;
-        case AST_NODE_VARIABLE: {
-            free(root->name);
+        case AST_NODE_VAR: {
+            ASTNodeVar* var = (ASTNodeVar*)root;
+            free(var->name);
         } break;
     }
     free(root);

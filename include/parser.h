@@ -2,84 +2,97 @@
 #include "lexer.h"
 #include "value.h"
 
-typedef enum ASTNodeType {
+typedef enum {
     AST_NODE_PROGRAM,
-    AST_NODE_VARIABLE_DECLARATION,
-    AST_NODE_EXPRESSION_STATEMENT,
-    AST_NODE_PRINT_STATEMENT,
-    AST_NODE_IF_STATEMENT,
-    AST_NODE_WHILE_STATEMENT,
     AST_NODE_BLOCK,
+    AST_NODE_VAR_DECL,
+    AST_NODE_EXPR_STMT,
+    AST_NODE_PRINT_STMT,
+    AST_NODE_IF_STMT,
+    AST_NODE_WHILE_STMT,
 
     AST_NODE_ASSIGNMENT,
     AST_NODE_LOGICAL,
     AST_NODE_BINARY,
     AST_NODE_UNARY,
     AST_NODE_LITERAL,
-    AST_NODE_VARIABLE,
+    AST_NODE_VAR,
 } ASTNodeType;
 
-typedef struct ASTNode {
+typedef struct {
     ASTNodeType type;
-
-    union {
-        // program, block
-        struct {
-            struct ASTNode** statements;
-            int count;
-            int capacity;
-        } block;
-
-        // var decl
-        struct {
-            char* name;
-            ValueType type;
-            struct ASTNode* initializer;
-        } variable_declaration;
-
-        // expr stmt
-        struct ASTNode* expression;
-
-        // if
-        struct {
-            struct ASTNode* condition;
-            struct ASTNode* then_branch;
-            struct ASTNode* else_branch;
-        } if_statement;
-
-        // while
-        struct {
-            struct ASTNode* condition;
-            struct ASTNode* body;
-        } while_statement;
-
-        // assignment
-        struct {
-            char* name;
-            TokenType op;
-            struct ASTNode* value;
-        } assignment;
-
-        // logical, binary
-        struct {
-            struct ASTNode* left;
-            TokenType op;
-            struct ASTNode* right;
-        } binary;
-
-        // unary
-        struct {
-            TokenType op;
-            struct ASTNode* right;
-        } unary;
-
-        // literal
-        Value literal;
-
-        // var
-        char* name;
-    };
 } ASTNode;
+
+typedef struct {
+    ASTNode base;
+
+    ASTNode** statements;
+    int count;
+    int capacity;
+} ASTNodeBlock;
+
+typedef struct {
+    ASTNode base;
+
+    char* name;
+    ASTNode* initializer;
+} ASTNodeVarDecl;
+
+typedef struct {
+    ASTNode base;
+
+    ASTNode* expression;
+} ASTNodeExprStmt;
+
+typedef struct {
+    ASTNode base;
+
+    ASTNode* condition;
+    ASTNode* then_branch;
+    ASTNode* else_branch;
+} ASTNodeIfStmt;
+
+typedef struct {
+    ASTNode base;
+
+    ASTNode* condition;
+    ASTNode* body;
+} ASTNodeWhileStmt;
+
+typedef struct {
+    ASTNode base;
+
+    TokenType op;
+    char* name;
+    ASTNode* value;
+} ASTNodeAssignment;
+
+typedef struct {
+    ASTNode base;
+
+    TokenType op;
+    ASTNode* left;
+    ASTNode* right;
+} ASTNodeBinary;
+
+typedef struct {
+    ASTNode base;
+
+    TokenType op;
+    ASTNode* right;
+} ASTNodeUnary;
+
+typedef struct {
+    ASTNode base;
+
+    Value value;
+} ASTNodeLiteral;
+
+typedef struct {
+    ASTNode base;
+
+    char* name;
+} ASTNodeVar;
 
 bool parser_parse(TokenArray* token_array, ASTNode** output);
 void parser_free_ast(ASTNode* root);

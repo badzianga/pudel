@@ -67,66 +67,59 @@ static bool values_equal(Value a, Value b) {
 
 Value interpreter_interpret(ASTNode* root) {
     switch (root->type) {
-        case AST_NODE_PROGRAM: {
-            for (int i = 0; i < root->block.count; ++i) {
-                interpreter_interpret(root->block.statements[i]);
+        case AST_NODE_PROGRAM:
+        case AST_NODE_BLOCK: {
+            ASTNodeBlock* block = (ASTNodeBlock*)root;
+            for (int i = 0; i < block->count; ++i) {
+                interpreter_interpret(block->statements[i]);
             }
         } break;
-        case AST_NODE_VARIABLE_DECLARATION: {
-            if (get_variable(root->variable_declaration.name) != NULL) {
-                runtime_error("redeclaration of variable '%s'", root->variable_declaration.name);
+        case AST_NODE_VAR_DECL: {
+            ASTNodeVarDecl* var_decl = (ASTNodeVarDecl*)root;
+            if (get_variable(var_decl->name) != NULL) {
+                runtime_error("redeclaration of variable '%s'", var_decl->name);
             }
             Value value = NULL_VALUE();
-            if (root->variable_declaration.initializer != NULL) {
-                value = interpreter_interpret(root->variable_declaration.initializer);
+            if (var_decl->initializer != NULL) {
+                value = interpreter_interpret(var_decl->initializer);
             }
-            variables[variable_count++] = (Variable){ root->variable_declaration.name, value };
+            variables[variable_count++] = (Variable){ .name = var_decl->name, .value = value };
         } break;
-        case AST_NODE_EXPRESSION_STATEMENT: {
-            interpreter_interpret(root->expression);
+        case AST_NODE_EXPR_STMT: {
+            ASTNodeExprStmt* expr_stmt = (ASTNodeExprStmt*)root;
+            interpreter_interpret(expr_stmt->expression);
         } break;
-        case AST_NODE_PRINT_STATEMENT: {
-            Value value = interpreter_interpret(root->expression);
-            switch (value.type) {
-                case VALUE_NULL: {
-                    printf("null\n");
-                } break;
-                case VALUE_NUMBER: {
-                    printf("%lf\n", value.number);
-                } break;
-                case VALUE_BOOL: {
-                    printf("%s\n", value.boolean ? "true" : "false");
-                } break;
-                default: break;
+        case AST_NODE_PRINT_STMT: {
+            ASTNodeExprStmt* print_stmt = (ASTNodeExprStmt*)root;
+            Value value = interpreter_interpret(print_stmt->expression);
+            print_value(value);
+            fputs("\n", stdout);
+        } break;
+        case AST_NODE_IF_STMT: {
+            ASTNodeIfStmt* if_stmt = (ASTNodeIfStmt*)root;
+            if (is_truthy(interpreter_interpret(if_stmt->condition))) {
+                interpreter_interpret(if_stmt->then_branch);
             }
-        } break;
-        case AST_NODE_IF_STATEMENT: {
-            if (is_truthy(interpreter_interpret(root->if_statement.condition))) {
-                interpreter_interpret(root->if_statement.then_branch);
-            }
-            else if (root->if_statement.else_branch != NULL) {
-                interpreter_interpret(root->if_statement.else_branch);
+            else if (if_stmt->else_branch != NULL) {
+                interpreter_interpret(if_stmt->else_branch);
             }
         } break;
-        case AST_NODE_WHILE_STATEMENT: {
-            while (is_truthy(interpreter_interpret(root->while_statement.condition))) {
-                if (root->while_statement.body != NULL) {
-                    interpreter_interpret(root->while_statement.body);
+        case AST_NODE_WHILE_STMT: {
+            ASTNodeWhileStmt* while_stmt = (ASTNodeWhileStmt*)root;
+            while (is_truthy(interpreter_interpret(while_stmt->condition))) {
+                if (while_stmt->body != NULL) {
+                    interpreter_interpret(while_stmt->body);
                 }
             }
         } break;
-        case AST_NODE_BLOCK: {
-            for (int i = 0; i < root->block.count; ++i) {
-                interpreter_interpret(root->block.statements[i]);
-            }
-        } break;
         case AST_NODE_ASSIGNMENT: {
-            Variable* var = get_variable(root->assignment.name);
+            ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
+            Variable* var = get_variable(assignment->name);
             if (var == NULL) {
-                runtime_error("undeclared identifier '%s'", root->assignment.name);
+                runtime_error("undeclared identifier '%s'", assignment->name);
             }
-            Value value = interpreter_interpret(root->assignment.value);
-            switch(root->assignment.op) {
+            Value value = interpreter_interpret(assignment->value);
+            switch(assignment->op) {
                 case TOKEN_PLUS_EQUAL: {
                     assert_number_operands(var->value, value);
                     var->value.number += value.number;
@@ -152,8 +145,9 @@ Value interpreter_interpret(ASTNode* root) {
             return var->value;
         }
         case AST_NODE_LOGICAL: {
-            Value left = interpreter_interpret(root->binary.left);
-            switch (root->binary.op) {
+            ASTNodeBinary* binary = (ASTNodeBinary*)root;
+            Value left = interpreter_interpret(binary->left);
+            switch (binary->op) {
                 case TOKEN_OR: {
                     if (is_truthy(left)) return left;
                 } break;
@@ -162,13 +156,14 @@ Value interpreter_interpret(ASTNode* root) {
                 } break;
                 default: break;
             }
-            return interpreter_interpret(root->binary.right);
+            return interpreter_interpret(binary->right);
         }
         case AST_NODE_BINARY: {
-            Value left = interpreter_interpret(root->binary.left);
-            Value right = interpreter_interpret(root->binary.right);
+            ASTNodeBinary* binary = (ASTNodeBinary*)root;
+            Value left = interpreter_interpret(binary->left);
+            Value right = interpreter_interpret(binary->right);
 
-            switch (root->binary.op) {
+            switch (binary->op) {
                 case TOKEN_PLUS: {
                     assert_number_operands(left, right);
                     return NUMBER_VALUE(left.number + right.number);
@@ -210,9 +205,10 @@ Value interpreter_interpret(ASTNode* root) {
             }
         } break;
         case AST_NODE_UNARY: {
-            Value value = interpreter_interpret(root->unary.right);
+            ASTNodeUnary* unary = (ASTNodeUnary*)root;
+            Value value = interpreter_interpret(unary->right);
 
-            switch (root->unary.op) {
+            switch (unary->op) {
                 case TOKEN_MINUS: {
                     assert_number_operand(value);
                     value.number = -value.number;
@@ -226,14 +222,16 @@ Value interpreter_interpret(ASTNode* root) {
             return NULL_VALUE();
         }
         case AST_NODE_LITERAL: {
-            return root->literal;
+            ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
+            return literal->value;
         }
-        case AST_NODE_VARIABLE: {
-            Variable* var = get_variable(root->name);
-            if (var == NULL) {
-                runtime_error("undeclared identifier '%s'\n", root->name);
+        case AST_NODE_VAR: {
+            ASTNodeVar* var = (ASTNodeVar*)root;
+            Variable* variable = get_variable(var->name);
+            if (variable == NULL) {
+                runtime_error("undeclared identifier '%s'\n", var->name);
             }
-            return var->value;
+            return variable->value;
         }
     }
     return NULL_VALUE();
