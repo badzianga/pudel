@@ -1,8 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "lexer.h"
 #include "memory.h"
@@ -15,19 +13,19 @@ typedef struct Lexer {
 
 static Lexer lexer;
 
-static bool is_at_end() {
+inline static bool is_at_end() {
     return *lexer.current == '\0';
 }
 
-static char peek() {
+inline static char peek() {
     return *lexer.current;
 }
 
-static char peek_next() {
+inline static char peek_next() {
     return *(lexer.current + 1);
 }
 
-static char advance() {
+inline static char advance() {
     return *lexer.current++;
 }
 
@@ -39,7 +37,7 @@ static bool advance_if(char expected) {
 }
 
 static Token make_token(TokenType type) {
-    return (Token) {
+    return (Token){
         .type = type,
         .value = lexer.start,
         .line = lexer.line,
@@ -48,7 +46,7 @@ static Token make_token(TokenType type) {
 }
 
 static Token make_error_token(const char* message) {
-    return (Token) {
+    return (Token){
         .type = TOKEN_ERROR,
         .value = message,
         .line = lexer.line,
@@ -255,8 +253,7 @@ const char* token_as_cstr(TokenType type) {
     );
 
     if (type < 0 || type > TOKEN_ERROR) {
-        fprintf(stderr, "lexer::token_as_cstr: unknown token type with value: %d\n", type);
-        exit(1);
+        return "UNKNOWN";
     }
 
     return token_strings[type];
