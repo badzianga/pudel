@@ -1,0 +1,17 @@
+// This program shows string features in Pudel.
+
+var greeting = "hello";
+print(greeting);
+
+var emptyString = "";
+if (!emptyString)
+    print("emptyString is empty indeed");
+else
+    print("emptyString is not empty");
+
+if (greeting == "hello") {
+    print("greeting is hello");
+}
+
+var name = "Tom";
+print(greeting + " " + name);
