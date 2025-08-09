@@ -30,6 +30,7 @@ static bool is_truthy(Value value) {
         case VALUE_NULL: return false;
         case VALUE_NUMBER: return value.number != 0.0;
         case VALUE_BOOL: return value.boolean;
+        case VALUE_STRING: return *value.string != '\0';
     }
     return false;
 }
@@ -61,6 +62,7 @@ static bool values_equal(Value a, Value b) {
         case VALUE_NULL: return true;
         case VALUE_NUMBER: return a.number == b.number;
         case VALUE_BOOL: return a.boolean == b.boolean;
+        case VALUE_STRING: return strcmp(a.string, b.string) == 0;
     }
     return false;
 }

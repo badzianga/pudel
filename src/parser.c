@@ -460,6 +460,10 @@ static ASTNode* parse_primary() {
         double value = strtod(previous()->value, NULL);
         return make_node_literal(NUMBER_VALUE(value));
     }
+    if (match(1, TOKEN_STRING)) {
+        char* value = strndup(previous()->value + 1, previous()->length - 2);
+        return make_node_literal(STRING_VALUE(value));
+    }
     if (match(1, TOKEN_TRUE)) {
         return make_node_literal(BOOL_VALUE(true));
     }
@@ -545,7 +549,12 @@ void parser_free_ast(ASTNode* root) {
             ASTNodeUnary* unary = (ASTNodeUnary*)root;
             free(unary->right);
         } break;
-        case AST_NODE_LITERAL: break;
+        case AST_NODE_LITERAL: {
+            ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
+            if (literal->value.type == VALUE_STRING) {
+                free(literal->value.string);
+            }
+        } break;
         case AST_NODE_VAR: {
             ASTNodeVar* var = (ASTNodeVar*)root;
             free(var->name);
