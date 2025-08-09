@@ -22,3 +22,5 @@ typedef struct Value {
 #define NULL_VALUE()        ((Value){ .type = VALUE_NULL,   .number = 0 })
 #define NUMBER_VALUE(value) ((Value){ .type = VALUE_NUMBER, .number = value })
 #define BOOL_VALUE(value)   ((Value){ .type = VALUE_BOOL,   .boolean = value })
+
+void print_value(Value value);
