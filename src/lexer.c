@@ -91,8 +91,6 @@ static Token read_number() {
 }
 
 static Token read_string() {
-    advance();
-
     while (peek() != '"' && !is_at_end()) {
         if (peek() == '\n') {
             ++lexer.line;
