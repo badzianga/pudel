@@ -1,6 +1,6 @@
 // This program prints numbers from 1 to 10 using while loop.
 
-var a := 1;
+var a = 1;
 while (a <= 10) {
     print a;
     a += 1;

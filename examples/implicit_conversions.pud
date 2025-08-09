@@ -1,7 +1,0 @@
-// This file shows working implicit conversions.
-
-var a: int = 10.0;
-print a;
-
-a += 0.5 * 200 * (3 > 2) - (30.0 * (true + 1));
-print a;  // should be 50
