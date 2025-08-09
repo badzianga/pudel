@@ -56,17 +56,6 @@ static void assert_number_operands(Value a, Value b) {
     runtime_error("operands must be numbers");
 }
 
-static bool values_equal(Value a, Value b) {
-    if (a.type != b.type) return false;
-    switch (a.type) {
-        case VALUE_NULL: return true;
-        case VALUE_NUMBER: return a.number == b.number;
-        case VALUE_BOOL: return a.boolean == b.boolean;
-        case VALUE_STRING: return strcmp(a.string, b.string) == 0;
-    }
-    return false;
-}
-
 Value interpreter_interpret(ASTNode* root) {
     switch (root->type) {
         case AST_NODE_PROGRAM:

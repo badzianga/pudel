@@ -28,3 +28,4 @@ typedef struct Value {
 #define STRING_VALUE(value) ((Value){ .type = VALUE_STRING, .string = value })
 
 void print_value(Value value);
+bool values_equal(Value a, Value b);
