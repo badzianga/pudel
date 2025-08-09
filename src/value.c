@@ -20,7 +20,7 @@ void print_value(Value value) {
             fputs("null", stdout);
         } break;
         case VALUE_NUMBER: {
-            printf("%lf", value.number);
+            printf("%g", value.number);
         } break;
         case VALUE_BOOL: {
             printf("%s", value.boolean ? "true" : "false");
