@@ -30,7 +30,7 @@ static bool is_truthy(Value value) {
         case VALUE_NULL: return false;
         case VALUE_NUMBER: return value.number != 0.0;
         case VALUE_BOOL: return value.boolean;
-        case VALUE_STRING: return *value.string != '\0';
+        case VALUE_STRING: return value.string->length != 0;
     }
     return false;
 }

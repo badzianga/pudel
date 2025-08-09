@@ -1,19 +1,24 @@
 #pragma once
 #include <stdbool.h>
 
-typedef enum ValueType {
+typedef enum {
     VALUE_NULL,
     VALUE_NUMBER,
     VALUE_BOOL,
     VALUE_STRING,
 } ValueType;
 
-typedef struct Value {
+typedef struct {
+    int length;
+    char data[];
+} String;
+
+typedef struct {
     ValueType type;
     union {
         double number;
         bool boolean;
-        char* string;
+        String* string;
     };
 } Value;
 
@@ -29,3 +34,7 @@ typedef struct Value {
 
 void print_value(Value value);
 bool values_equal(Value a, Value b);
+
+String* string_new(int length);
+String* string_concat(String* a, String* b);
+bool strings_equal(String* a, String* b);

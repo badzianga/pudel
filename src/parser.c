@@ -461,8 +461,10 @@ static ASTNode* parse_primary() {
         return make_node_literal(NUMBER_VALUE(value));
     }
     if (match(1, TOKEN_STRING)) {
-        char* value = strndup(previous()->value + 1, previous()->length - 2);
-        return make_node_literal(STRING_VALUE(value));
+        int length = previous()->length - 2;
+        String* string = string_new(length);
+        memcpy(string->data, previous()->value + 1, length);
+        return make_node_literal(STRING_VALUE(string));
     }
     if (match(1, TOKEN_TRUE)) {
         return make_node_literal(BOOL_VALUE(true));
