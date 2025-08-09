@@ -12,6 +12,7 @@ Pudel is inspired by `jlox` from ["Crafting Interpreters" by Robert Nystrom](htt
 - Logical operators: `and`, `or`
 - Conditional statements: `if`, `else`
 - Loops: `while`, `for`
+- Dynamic variables with types: `number`, `bool`, `string`
 
 ## Building
 
