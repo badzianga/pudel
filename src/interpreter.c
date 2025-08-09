@@ -112,8 +112,15 @@ Value interpreter_interpret(ASTNode* root) {
             Value value = interpreter_interpret(assignment->value);
             switch(assignment->op) {
                 case TOKEN_PLUS_EQUAL: {
-                    assert_number_operands(var->value, value);
-                    var->value.number += value.number;
+                    if (IS_NUMBER(var->value) && IS_NUMBER(value)) {
+                        var->value.number += value.number;
+                    }
+                    else if (IS_STRING(var->value) && IS_STRING(value)) {
+                        var->value.string = string_concat(var->value.string, value.string);
+                    }
+                    else {
+                        runtime_error("invalid operands for '+=' operation");
+                    }
                 } break;
                 case TOKEN_MINUS_EQUAL: {
                     assert_number_operands(var->value, value);
@@ -156,6 +163,15 @@ Value interpreter_interpret(ASTNode* root) {
 
             switch (binary->op) {
                 case TOKEN_PLUS: {
+                    if (IS_NUMBER(left) && IS_NUMBER(right)) {
+                        return NUMBER_VALUE(left.number + right.number);
+                    }
+                    else if (IS_STRING(left) && IS_STRING(right)) {
+                        return STRING_VALUE(string_concat(left.string, right.string));
+                    }
+                    else {
+                        runtime_error("invalid operands for '+' operation");
+                    }
                     assert_number_operands(left, right);
                     return NUMBER_VALUE(left.number + right.number);
                 }

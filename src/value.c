@@ -37,9 +37,12 @@ String* string_new(int length) {
     return string;
 }
 
+// TODO: strings created using this method aren't freed (only string literals)
 String* string_concat(String* a, String* b) {
-    // TODO: not implemented
-    return NULL;
+    String* c = string_new(a->length + b->length);
+    memcpy(c->data, a->data, a->length);
+    memcpy(c->data + a->length, b->data, b->length);
+    return c;
 }
 
 bool strings_equal(String* a, String* b) {
