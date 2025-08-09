@@ -90,6 +90,23 @@ static Token read_number() {
     return make_token(TOKEN_NUMBER);
 }
 
+static Token read_string() {
+    advance();
+
+    while (peek() != '"' && !is_at_end()) {
+        if (peek() == '\n') {
+            ++lexer.line;
+        }
+        advance();
+    }
+
+    if (is_at_end()) return make_error_token("unterminated string");
+
+    advance();
+    return make_token(TOKEN_STRING);
+    
+}
+
 static Token read_identifier() {
     while (isalnum(peek()) || peek() == '_') {
         advance();
@@ -166,6 +183,8 @@ static Token next_token() {
             return advance_if('=') ? make_token(TOKEN_GREATER_EQUAL) : make_token(TOKEN_GREATER);
         case '<':
             return advance_if('=') ? make_token(TOKEN_LESS_EQUAL) : make_token(TOKEN_LESS);
+        case '"':
+            return read_string();
         default:
             break;
     }
@@ -231,6 +250,7 @@ const char* token_as_cstr(TokenType type) {
 
         "IDENTIFIER",
         "NUMBER",
+        "STRING",
 
         "and",
         "else",

@@ -28,6 +28,7 @@ typedef enum TokenType {
 
     TOKEN_IDENTIFIER,      // x
     TOKEN_NUMBER,          // 0
+    TOKEN_STRING,          // ""
 
     TOKEN_AND,             // and
     TOKEN_ELSE,            // else
