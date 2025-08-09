@@ -12,5 +12,8 @@ void print_value(Value value) {
         case VALUE_BOOL: {
             printf("%s", value.boolean ? "true" : "false");
         } break;
+        case VALUE_STRING: {
+            printf("%s", value.string);
+        } break;
     }
 }
