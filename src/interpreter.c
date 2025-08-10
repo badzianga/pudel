@@ -95,7 +95,7 @@ Value evaluate(ASTNode* root) {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
             Value* var = env_get_ref(env, assignment->name);
             if (var == NULL) {
-                runtime_error("undeclared identifier '%s'", assignment->name);
+                runtime_error("undeclared identifier '%s'", assignment->name->data);
             }
             Value value = evaluate(assignment->value);
             switch(assignment->op) {
@@ -224,7 +224,7 @@ Value evaluate(ASTNode* root) {
             ASTNodeVar* var = (ASTNodeVar*)root;
             Value* variable = env_get_ref(env, var->name);
             if (variable == NULL) {
-                runtime_error("undeclared identifier '%s'\n", var->name);
+                runtime_error("undeclared identifier '%s'\n", var->name->data);
             }
             return *variable;
         }
