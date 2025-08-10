@@ -107,7 +107,7 @@ static ASTNode* make_node_block_filled_with(int argc, ...) {
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_var_decl(char* name, ASTNode* initializer) {
+static ASTNode* make_node_var_decl(String* name, ASTNode* initializer) {
     ASTNodeVarDecl* node = malloc(sizeof(ASTNodeVarDecl));
     node->base.type = AST_NODE_VAR_DECL;
     node->name = name;
@@ -146,7 +146,7 @@ static ASTNode* make_node_while_stmt(ASTNode* condition, ASTNode* body) {
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_assignment(char* name, TokenType op, ASTNode* value) {
+static ASTNode* make_node_assignment(String* name, TokenType op, ASTNode* value) {
     ASTNodeAssignment* node = malloc(sizeof(ASTNodeAssignment));
     node->base.type = AST_NODE_ASSIGNMENT;
     node->name = name;
@@ -188,7 +188,7 @@ static ASTNode* make_node_literal(Value value) {
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_var(char* name) {
+static ASTNode* make_node_var(String* name) {
     ASTNodeVar* node = malloc(sizeof(ASTNodeVar));
     node->base.type = AST_NODE_VAR;
     node->name = name;
@@ -243,7 +243,9 @@ static ASTNode* parse_declaration() {
 
 static ASTNode* parse_variable_declaration() {
     consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
-    char* name = strndup(previous()->value, previous()->length);
+    int length = previous()->length;
+    String* name = string_new(length);
+    memcpy(name->data, previous()->value, length);
 
     ASTNode* initializer = NULL;
     if (match(1, TOKEN_EQUAL)) {
@@ -453,7 +455,9 @@ static ASTNode* parse_unary() {
 
 static ASTNode* parse_primary() {
     if (match(1, TOKEN_IDENTIFIER)) {
-        char* name = strndup(previous()->value, previous()->length);
+        int length = previous()->length;
+        String* name = string_new(length);
+        memcpy(name->data, previous()->value, length);
         return make_node_var(name);
     }
     if (match(1, TOKEN_NUMBER)) {

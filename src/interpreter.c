@@ -2,28 +2,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "hashmap.h"
 #include "interpreter.h"
 #include "lexer.h"
 #include "parser.h"
 #include "value.h"
 
-typedef struct Variable {
-    char* name;
-    Value value;
-} Variable;
+static HashMap variables = { 0 };
 
-static Variable variables[128] = { 0 };
-static int variable_count = 0;
+// typedef struct Variable {
+//     char* name;
+//     Value value;
+// } Variable;
 
-static Variable* get_variable(char* name) {
-    Variable* end = variables + variable_count;
-    for (Variable* var = variables; var != end; ++var) {        
-        if (strcmp(name, var->name) == 0) {
-            return var;
-        }
-    }
-    return NULL;
-}
+// static Variable variables[128] = { 0 };
+// static int variable_count = 0;
+
+// static Variable* get_variable(char* name) {
+//     Variable* end = variables + variable_count;
+//     for (Variable* var = variables; var != end; ++var) {        
+//         if (strcmp(name, var->name) == 0) {
+//             return var;
+//         }
+//     }
+//     return NULL;
+// }
 
 static bool is_truthy(Value value) {
     switch (value.type) {
@@ -67,14 +70,14 @@ Value evaluate(ASTNode* root) {
         } break;
         case AST_NODE_VAR_DECL: {
             ASTNodeVarDecl* var_decl = (ASTNodeVarDecl*)root;
-            if (get_variable(var_decl->name) != NULL) {
+            if (hashmap_get_ref(&variables, var_decl->name) != NULL) {
                 runtime_error("redeclaration of variable '%s'", var_decl->name);
             }
             Value value = NULL_VALUE();
             if (var_decl->initializer != NULL) {
                 value = evaluate(var_decl->initializer);
             }
-            variables[variable_count++] = (Variable){ .name = var_decl->name, .value = value };
+            hashmap_put(&variables, var_decl->name, value);
         } break;
         case AST_NODE_EXPR_STMT: {
             ASTNodeExprStmt* expr_stmt = (ASTNodeExprStmt*)root;
@@ -105,42 +108,42 @@ Value evaluate(ASTNode* root) {
         } break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
-            Variable* var = get_variable(assignment->name);
+            Value* var = hashmap_get_ref(&variables, assignment->name);
             if (var == NULL) {
                 runtime_error("undeclared identifier '%s'", assignment->name);
             }
             Value value = evaluate(assignment->value);
             switch(assignment->op) {
                 case TOKEN_PLUS_EQUAL: {
-                    if (IS_NUMBER(var->value) && IS_NUMBER(value)) {
-                        var->value.number += value.number;
+                    if (IS_NUMBER(*var) && IS_NUMBER(value)) {
+                        var->number += value.number;
                     }
-                    else if (IS_STRING(var->value) && IS_STRING(value)) {
-                        var->value.string = string_concat(var->value.string, value.string);
+                    else if (IS_STRING(*var) && IS_STRING(value)) {
+                        var->string = string_concat(var->string, value.string);
                     }
                     else {
                         runtime_error("invalid operands for '+=' operation");
                     }
                 } break;
                 case TOKEN_MINUS_EQUAL: {
-                    assert_number_operands(var->value, value);
-                    var->value.number -= value.number;
+                    assert_number_operands(*var, value);
+                    var->number -= value.number;
                 } break;
                 case TOKEN_ASTERISK_EQUAL: {
-                    assert_number_operands(var->value, value);
-                    var->value.number *= value.number;
+                    assert_number_operands(*var, value);
+                    var->number *= value.number;
                 } break;
                 case TOKEN_SLASH_EQUAL: {
-                    assert_number_operands(var->value, value);
+                    assert_number_operands(*var, value);
                     if (value.number == 0.0) runtime_error("cannot divide by zero");
-                    var->value.number /= value.number;
+                    var->number /= value.number;
                 } break;
                 case TOKEN_EQUAL: {
-                    var->value = value;
+                    *var = value;
                 } break;
                 default: break;
             }
-            return var->value;
+            return *var;
         }
         case AST_NODE_LOGICAL: {
             ASTNodeBinary* binary = (ASTNodeBinary*)root;
@@ -234,16 +237,18 @@ Value evaluate(ASTNode* root) {
         }
         case AST_NODE_VAR: {
             ASTNodeVar* var = (ASTNodeVar*)root;
-            Variable* variable = get_variable(var->name);
+            Value* variable = hashmap_get_ref(&variables, var->name);
             if (variable == NULL) {
                 runtime_error("undeclared identifier '%s'\n", var->name);
             }
-            return variable->value;
+            return *variable;
         }
     }
     return NULL_VALUE();
 }
 
 Value interpreter_interpret(ASTNode* root) {
+    variables = hashmap_create();
+
     return evaluate(root);
 }

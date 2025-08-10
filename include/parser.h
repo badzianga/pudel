@@ -34,7 +34,7 @@ typedef struct {
 typedef struct {
     ASTNode base;
 
-    char* name;
+    String* name;
     ASTNode* initializer;
 } ASTNodeVarDecl;
 
@@ -63,7 +63,7 @@ typedef struct {
     ASTNode base;
 
     TokenType op;
-    char* name;
+    String* name;
     ASTNode* value;
 } ASTNodeAssignment;
 
@@ -91,7 +91,7 @@ typedef struct {
 typedef struct {
     ASTNode base;
 
-    char* name;
+    String* name;
 } ASTNodeVar;
 
 bool parser_parse(TokenArray* token_array, ASTNode** output);

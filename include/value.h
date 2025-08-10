@@ -22,10 +22,10 @@ typedef struct {
     };
 } Value;
 
-#define IS_NULL(value)      (value.type == VALUE_NULL)
-#define IS_NUMBER(value)    (value.type == VALUE_NUMBER)
-#define IS_BOOL(value)      (value.type == VALUE_BOOL)
-#define IS_STRING(value)    (value.type == VALUE_STRING)
+#define IS_NULL(value)      ((value).type == VALUE_NULL)
+#define IS_NUMBER(value)    ((value).type == VALUE_NUMBER)
+#define IS_BOOL(value)      ((value).type == VALUE_BOOL)
+#define IS_STRING(value)    ((value).type == VALUE_STRING)
 
 #define NULL_VALUE()        ((Value){ .type = VALUE_NULL,   .number = 0 })
 #define NUMBER_VALUE(value) ((Value){ .type = VALUE_NUMBER, .number = value })

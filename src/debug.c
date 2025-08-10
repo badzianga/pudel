@@ -49,7 +49,7 @@ void debug_print_ast(ASTNode* root, int indent) {
         } break;
         case AST_NODE_VAR_DECL: {
             ASTNodeVarDecl* var_decl = (ASTNodeVarDecl*)root;
-            printf("VarDecl: %s\n", var_decl->name);
+            printf("VarDecl: %s\n", var_decl->name->data);
             if (var_decl->initializer != NULL) {
                 debug_print_ast(var_decl->initializer, indent + 1);
             }
@@ -91,7 +91,7 @@ void debug_print_ast(ASTNode* root, int indent) {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
             printf(
                 "Assignment: %s %s\n",
-                assignment->name,
+                assignment->name->data,
                 token_as_cstr(assignment->op)
             );
             debug_print_ast(assignment->value, indent + 1);
@@ -121,7 +121,7 @@ void debug_print_ast(ASTNode* root, int indent) {
         } break;
         case AST_NODE_VAR: {
             ASTNodeVar* var = (ASTNodeVar*)root;
-            printf("Variable: %s\n", var->name);
+            printf("Variable: %s\n", var->name->data);
         } break;
         default: {
             fprintf(stderr, "Unknown: ID=%d\n", root->type);
