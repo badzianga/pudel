@@ -56,13 +56,13 @@ static void assert_number_operands(Value a, Value b) {
     runtime_error("operands must be numbers");
 }
 
-Value interpreter_interpret(ASTNode* root) {
+Value evaluate(ASTNode* root) {
     switch (root->type) {
         case AST_NODE_PROGRAM:
         case AST_NODE_BLOCK: {
             ASTNodeBlock* block = (ASTNodeBlock*)root;
             for (int i = 0; i < block->count; ++i) {
-                interpreter_interpret(block->statements[i]);
+                evaluate(block->statements[i]);
             }
         } break;
         case AST_NODE_VAR_DECL: {
@@ -72,34 +72,34 @@ Value interpreter_interpret(ASTNode* root) {
             }
             Value value = NULL_VALUE();
             if (var_decl->initializer != NULL) {
-                value = interpreter_interpret(var_decl->initializer);
+                value = evaluate(var_decl->initializer);
             }
             variables[variable_count++] = (Variable){ .name = var_decl->name, .value = value };
         } break;
         case AST_NODE_EXPR_STMT: {
             ASTNodeExprStmt* expr_stmt = (ASTNodeExprStmt*)root;
-            interpreter_interpret(expr_stmt->expression);
+            evaluate(expr_stmt->expression);
         } break;
         case AST_NODE_PRINT_STMT: {
             ASTNodeExprStmt* print_stmt = (ASTNodeExprStmt*)root;
-            Value value = interpreter_interpret(print_stmt->expression);
+            Value value = evaluate(print_stmt->expression);
             print_value(value);
             fputs("\n", stdout);
         } break;
         case AST_NODE_IF_STMT: {
             ASTNodeIfStmt* if_stmt = (ASTNodeIfStmt*)root;
-            if (is_truthy(interpreter_interpret(if_stmt->condition))) {
-                interpreter_interpret(if_stmt->then_branch);
+            if (is_truthy(evaluate(if_stmt->condition))) {
+                evaluate(if_stmt->then_branch);
             }
             else if (if_stmt->else_branch != NULL) {
-                interpreter_interpret(if_stmt->else_branch);
+                evaluate(if_stmt->else_branch);
             }
         } break;
         case AST_NODE_WHILE_STMT: {
             ASTNodeWhileStmt* while_stmt = (ASTNodeWhileStmt*)root;
-            while (is_truthy(interpreter_interpret(while_stmt->condition))) {
+            while (is_truthy(evaluate(while_stmt->condition))) {
                 if (while_stmt->body != NULL) {
-                    interpreter_interpret(while_stmt->body);
+                    evaluate(while_stmt->body);
                 }
             }
         } break;
@@ -109,7 +109,7 @@ Value interpreter_interpret(ASTNode* root) {
             if (var == NULL) {
                 runtime_error("undeclared identifier '%s'", assignment->name);
             }
-            Value value = interpreter_interpret(assignment->value);
+            Value value = evaluate(assignment->value);
             switch(assignment->op) {
                 case TOKEN_PLUS_EQUAL: {
                     if (IS_NUMBER(var->value) && IS_NUMBER(value)) {
@@ -144,7 +144,7 @@ Value interpreter_interpret(ASTNode* root) {
         }
         case AST_NODE_LOGICAL: {
             ASTNodeBinary* binary = (ASTNodeBinary*)root;
-            Value left = interpreter_interpret(binary->left);
+            Value left = evaluate(binary->left);
             switch (binary->op) {
                 case TOKEN_OR: {
                     if (is_truthy(left)) return left;
@@ -154,12 +154,12 @@ Value interpreter_interpret(ASTNode* root) {
                 } break;
                 default: break;
             }
-            return interpreter_interpret(binary->right);
+            return evaluate(binary->right);
         }
         case AST_NODE_BINARY: {
             ASTNodeBinary* binary = (ASTNodeBinary*)root;
-            Value left = interpreter_interpret(binary->left);
-            Value right = interpreter_interpret(binary->right);
+            Value left = evaluate(binary->left);
+            Value right = evaluate(binary->right);
 
             switch (binary->op) {
                 case TOKEN_PLUS: {
@@ -213,7 +213,7 @@ Value interpreter_interpret(ASTNode* root) {
         } break;
         case AST_NODE_UNARY: {
             ASTNodeUnary* unary = (ASTNodeUnary*)root;
-            Value value = interpreter_interpret(unary->right);
+            Value value = evaluate(unary->right);
 
             switch (unary->op) {
                 case TOKEN_MINUS: {
@@ -242,4 +242,8 @@ Value interpreter_interpret(ASTNode* root) {
         }
     }
     return NULL_VALUE();
+}
+
+Value interpreter_interpret(ASTNode* root) {
+    return evaluate(root);
 }
