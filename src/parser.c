@@ -360,7 +360,7 @@ static ASTNode* parse_block() {
             block->capacity = GROW_CAPACITY(block->capacity);
             block->statements = GROW_ARRAY(ASTNode*, block->statements, block->capacity);
         }
-        block->statements[block->count++] = parse_statement();
+        block->statements[block->count++] = parse_declaration();
     }
     return (ASTNode*)block;
 }

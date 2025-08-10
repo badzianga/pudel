@@ -8,7 +8,7 @@
 #include "parser.h"
 #include "value.h"
 
-static Environment env = { 0 };
+static Environment* env = NULL;
 
 static bool is_truthy(Value value) {
     switch (value.type) {
@@ -46,9 +46,13 @@ Value evaluate(ASTNode* root) {
         case AST_NODE_PROGRAM:
         case AST_NODE_BLOCK: {
             ASTNodeBlock* block = (ASTNodeBlock*)root;
+            Environment* previous = env;
+            env = env_new_with_enclosing(previous);
             for (int i = 0; i < block->count; ++i) {
                 evaluate(block->statements[i]);
             }
+            env_free(env);
+            env = previous;
         } break;
         case AST_NODE_VAR_DECL: {
             ASTNodeVarDecl* var_decl = (ASTNodeVarDecl*)root;
@@ -56,7 +60,7 @@ Value evaluate(ASTNode* root) {
             if (var_decl->initializer != NULL) {
                 value = evaluate(var_decl->initializer);
             }
-            if (env_define(&env, var_decl->name, value)) {
+            if (env_define(env, var_decl->name, value)) {
                 runtime_error("redeclaration of variable '%s'", var_decl->name);
             }
         } break;
@@ -89,7 +93,7 @@ Value evaluate(ASTNode* root) {
         } break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
-            Value* var = env_get_ref(&env, assignment->name);
+            Value* var = env_get_ref(env, assignment->name);
             if (var == NULL) {
                 runtime_error("undeclared identifier '%s'", assignment->name);
             }
@@ -218,7 +222,7 @@ Value evaluate(ASTNode* root) {
         }
         case AST_NODE_VAR: {
             ASTNodeVar* var = (ASTNodeVar*)root;
-            Value* variable = env_get_ref(&env, var->name);
+            Value* variable = env_get_ref(env, var->name);
             if (variable == NULL) {
                 runtime_error("undeclared identifier '%s'\n", var->name);
             }
@@ -231,6 +235,6 @@ Value evaluate(ASTNode* root) {
 Value interpreter_interpret(ASTNode* root) {
     env = env_new();
     Value value = evaluate(root);
-    env_free(&env);
+    env_free(env);
     return value;
 }
