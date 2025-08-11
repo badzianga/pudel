@@ -61,7 +61,7 @@ Value evaluate(ASTNode* root) {
                 value = evaluate(var_decl->initializer);
             }
             if (env_define(env, var_decl->name, value)) {
-                runtime_error("redeclaration of variable '%s'", var_decl->name);
+                runtime_error("redeclaration of variable '%s'", var_decl->name->data);
             }
         } break;
         case AST_NODE_EXPR_STMT: {
