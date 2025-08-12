@@ -15,6 +15,7 @@ typedef enum {
     AST_NODE_LOGICAL,
     AST_NODE_BINARY,
     AST_NODE_UNARY,
+    AST_NODE_CALL,
     AST_NODE_LITERAL,
     AST_NODE_VAR,
 } ASTNodeType;
@@ -81,6 +82,15 @@ typedef struct {
     TokenType op;
     ASTNode* right;
 } ASTNodeUnary;
+
+typedef struct {
+    ASTNode base;
+
+    ASTNode* callee;
+    ASTNode** arguments;
+    int count;
+    int capacity;
+} ASTNodeCall;
 
 typedef struct {
     ASTNode base;

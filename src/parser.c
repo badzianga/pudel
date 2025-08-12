@@ -215,6 +215,7 @@ static ASTNode* parse_comparison();
 static ASTNode* parse_term();
 static ASTNode* parse_factor();
 static ASTNode* parse_unary();
+static ASTNode* parse_call();
 static ASTNode* parse_primary();
 
 static ASTNode* parse_program() {
@@ -450,6 +451,10 @@ static ASTNode* parse_unary() {
         ASTNode* right = parse_primary();
         return make_node_unary(op, right);
     }
+    return parse_call();
+}
+
+static ASTNode* parse_call() {
     return parse_primary();
 }
 
@@ -554,6 +559,13 @@ void parser_free_ast(ASTNode* root) {
         case AST_NODE_UNARY: {
             ASTNodeUnary* unary = (ASTNodeUnary*)root;
             free(unary->right);
+        } break;
+        case AST_NODE_CALL: {
+            ASTNodeCall* call = (ASTNodeCall*)root;
+            free(call->callee);
+            for (int i = 0; i < call->count; ++i) {
+                free(call->arguments[i]);
+            }
         } break;
         case AST_NODE_LITERAL: {
             ASTNodeLiteral* literal = (ASTNodeLiteral*)root;

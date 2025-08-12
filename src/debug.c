@@ -113,6 +113,11 @@ void debug_print_ast(ASTNode* root, int indent) {
             printf("Unary: %s\n", token_as_cstr(unary->op));
             debug_print_ast(unary->right, indent + 1);
         } break;
+        case AST_NODE_CALL: {
+            ASTNodeCall* call = (ASTNodeCall*)root;
+            printf("Call:");
+            // TODO: print call node properly
+        } break;
         case AST_NODE_LITERAL: {
             ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
             fputs("Literal: ", stdout);
