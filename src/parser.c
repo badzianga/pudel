@@ -566,6 +566,7 @@ void parser_free_ast(ASTNode* root) {
             for (int i = 0; i < call->count; ++i) {
                 free(call->arguments[i]);
             }
+            free(call->arguments);
         } break;
         case AST_NODE_LITERAL: {
             ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
