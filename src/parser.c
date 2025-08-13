@@ -181,6 +181,13 @@ static ASTNode* make_node_unary(TokenType op, ASTNode* right) {
     return (ASTNode*)node;
 }
 
+static ASTNode* make_node_call(ASTNode* callee) {
+    ASTNodeCall* node = calloc(1, sizeof(ASTNodeCall));
+    node->base.type = AST_NODE_CALL;
+    node->callee = callee;
+    return (ASTNode*)node; 
+}
+
 static ASTNode* make_node_literal(Value value) {
     ASTNodeLiteral* node = malloc(sizeof(ASTNodeLiteral));
     node->base.type = AST_NODE_LITERAL;
@@ -454,8 +461,34 @@ static ASTNode* parse_unary() {
     return parse_call();
 }
 
+static ASTNode* finish_call(ASTNode* callee) {
+    ASTNodeCall* call = (ASTNodeCall*)make_node_call(callee);
+
+    if (parser.current->type != TOKEN_RIGHT_PAREN) {
+        do {
+            if (call->capacity < call->count + 1) {
+                call->capacity = GROW_CAPACITY(call->capacity);
+                call->arguments = GROW_ARRAY(ASTNode*, call->arguments, call->capacity);
+            }
+            call->arguments[call->count++] = parse_expression();
+        } while (match(1, TOKEN_COMMA));
+    }
+
+    consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after arguments");
+
+    return (ASTNode*)call;
+}
+
 static ASTNode* parse_call() {
-    return parse_primary();
+    ASTNode* expr = parse_primary();
+    for (;;) {
+        if (match(1, TOKEN_LEFT_PAREN)) {
+            expr = finish_call(expr);
+        } else {
+            break;
+        }
+    }
+    return expr;
 }
 
 static ASTNode* parse_primary() {
