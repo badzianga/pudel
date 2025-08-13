@@ -115,8 +115,14 @@ void debug_print_ast(ASTNode* root, int indent) {
         } break;
         case AST_NODE_CALL: {
             ASTNodeCall* call = (ASTNodeCall*)root;
-            printf("Call:");
-            // TODO: print call node properly
+            printf("Call:\n");
+            printf("Callee:\n");
+            debug_print_ast(call->callee, indent + 1);
+            for (int i = 0; i < indent; ++i) printf("  ");
+            printf("Arguments:\n");
+            for (int i = 0; i < call->count; ++i) {
+                debug_print_ast(call->arguments[i], indent + 1);
+            }
         } break;
         case AST_NODE_LITERAL: {
             ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
