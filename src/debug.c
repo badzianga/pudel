@@ -10,7 +10,7 @@ void debug_print_token_array(TokenArray* token_array) {
     for (const Token* token = token_array->tokens; token != end; ++token) {
         TokenType type = token->type;
 
-        if (type == TOKEN_NUMBER || type == TOKEN_STRING) {
+        if (type == TOKEN_NUMBER || type == TOKEN_STRING || type == TOKEN_IDENTIFIER) {
             printf(
                 "Line: %d,\ttoken: %s,\tvalue: %.*s\n",
                 token->line,
@@ -115,7 +115,8 @@ void debug_print_ast(ASTNode* root, int indent) {
         } break;
         case AST_NODE_CALL: {
             ASTNodeCall* call = (ASTNodeCall*)root;
-            printf("Call:\n");
+            printf("Call: %d\n", call->count);
+            for (int i = 0; i < indent; ++i) printf("  ");
             printf("Callee:\n");
             debug_print_ast(call->callee, indent + 1);
             for (int i = 0; i < indent; ++i) printf("  ");
