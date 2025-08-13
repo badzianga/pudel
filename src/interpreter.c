@@ -16,6 +16,7 @@ static bool is_truthy(Value value) {
         case VALUE_NUMBER: return value.number != 0.0;
         case VALUE_BOOL: return value.boolean;
         case VALUE_STRING: return value.string->length != 0;
+        case VALUE_NATIVE: return true;
     }
     return false;
 }
@@ -216,6 +217,22 @@ Value evaluate(ASTNode* root) {
             }
             return NULL_VALUE();
         }
+        case AST_NODE_CALL: {
+            ASTNodeCall* call = (ASTNodeCall*)root;
+            Value callee = evaluate(call->callee);
+
+            if (callee.type != VALUE_NATIVE) {
+                runtime_error("attempt to call a non-function value");
+            }
+
+            Value* args = malloc(sizeof(Value) * call->count);
+            for (int i = 0; i < call->count; ++i) {
+                args[i] = evaluate(call->arguments[i]);
+            }
+            Value result = callee.native(call->count, args);
+            free(args);
+            return result;
+        } break;
         case AST_NODE_LITERAL: {
             ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
             return literal->value;
