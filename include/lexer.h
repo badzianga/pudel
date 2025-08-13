@@ -8,6 +8,7 @@ typedef enum TokenType {
     TOKEN_LEFT_BRACE,      // {
     TOKEN_RIGHT_BRACE,     // }
     TOKEN_SEMICOLON,       // ;
+    TOKEN_COMMA,           // ,
 
     TOKEN_PLUS,            // +
     TOKEN_PLUS_EQUAL,      // +=
