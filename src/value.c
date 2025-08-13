@@ -10,6 +10,7 @@ bool values_equal(Value a, Value b) {
         case VALUE_NUMBER: return a.number == b.number;
         case VALUE_BOOL:   return a.boolean == b.boolean;
         case VALUE_STRING: return strings_equal(a.string, b.string);
+        case VALUE_NATIVE: return false;  // TODO: handle native functions equality
         default:           return false;
     }
 }
@@ -28,6 +29,9 @@ void print_value(Value value) {
         case VALUE_STRING: {
             printf("%s", value.string->data);
         } break;
+        case VALUE_NATIVE: {
+            printf("<native>");  // TODO: print proper native function value
+        }
     }
 }
 
