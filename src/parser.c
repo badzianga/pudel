@@ -380,7 +380,7 @@ static ASTNode* parse_expression() {
 static ASTNode* parse_assignment() {
     ASTNode* expression = parse_or();
 
-    if (match(4, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL)) {
+    if (match(5, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL)) {
         Token* op_token = previous();
         ASTNode* value = parse_assignment();
         
