@@ -44,5 +44,6 @@ void print_value(Value value);
 bool values_equal(Value a, Value b);
 
 String* string_new(int length);
+String* string_from(const char* data);
 String* string_concat(String* a, String* b);
 bool strings_equal(String* a, String* b);

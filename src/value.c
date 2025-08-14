@@ -41,6 +41,12 @@ String* string_new(int length) {
     return string;
 }
 
+String* string_from(const char* data) {
+    String* string = string_new(strlen(data));
+    memcpy(string->data, data, string->length);
+    return string;
+}
+
 // TODO: strings created using this method aren't freed (only string literals)
 String* string_concat(String* a, String* b) {
     String* c = string_new(a->length + b->length);
