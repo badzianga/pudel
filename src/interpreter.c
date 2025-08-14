@@ -1,7 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <time.h>
 #include "environment.h"
 #include "interpreter.h"
 #include "lexer.h"
@@ -40,6 +40,16 @@ static void assert_number_operand(Value a) {
 static void assert_number_operands(Value a, Value b) {
     if (IS_NUMBER(a) && IS_NUMBER(b)) return;
     runtime_error("operands must be numbers");
+}
+
+static Value clock_native(int argc, Value* argv) {
+    (void)argv;
+    if (argc != 0) runtime_error("expected 0 arguments but got %d", argc);
+    return NUMBER_VALUE((double)clock() / CLOCKS_PER_SEC);
+}
+
+static void add_natives(Environment* global_scope) {
+    env_define(global_scope, string_from("clock"), NATIVE_VALUE(clock_native));
 }
 
 Value evaluate(ASTNode* root) {
@@ -251,6 +261,8 @@ Value evaluate(ASTNode* root) {
 
 Value interpreter_interpret(ASTNode* root) {
     env = env_new();
+    add_natives(env);
+
     Value value = evaluate(root);
     env_free(env);
     return value;
