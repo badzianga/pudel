@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "environment.h"
 #include "interpreter.h"
@@ -56,9 +57,22 @@ static Value print_native(int argc, Value* argv) {
     return NULL_VALUE();
 }
 
+static Value input_native(int argc, Value* argv) {
+    if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
+    print_value(argv[0]);
+    char buffer[1024];
+    if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+        buffer[strcspn(buffer, "\n")] = '\0';
+        return STRING_VALUE(string_from(buffer));
+    }
+    runtime_error("failed to read from input");
+    return NULL_VALUE();
+}
+
 static void add_natives(Environment* global_scope) {
-    env_define(global_scope, string_from("print"), NATIVE_VALUE(print_native));
     env_define(global_scope, string_from("clock"), NATIVE_VALUE(clock_native));
+    env_define(global_scope, string_from("print"), NATIVE_VALUE(print_native));
+    env_define(global_scope, string_from("input"), NATIVE_VALUE(input_native));
 }
 
 Value evaluate(ASTNode* root) {
