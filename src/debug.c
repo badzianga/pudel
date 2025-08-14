@@ -59,11 +59,6 @@ void debug_print_ast(ASTNode* root, int indent) {
             printf("ExprStmt:\n");
             debug_print_ast(expr_stmt->expression, indent + 1);
         } break;
-        case AST_NODE_PRINT_STMT: {
-            ASTNodeExprStmt* print_stmt = (ASTNodeExprStmt*)root;
-            printf("Print:\n");
-            debug_print_ast(print_stmt->expression, indent + 1);
-        } break;
         case AST_NODE_IF_STMT: {
             ASTNodeIfStmt* if_stmt = (ASTNodeIfStmt*)root;
             printf("If:\n");

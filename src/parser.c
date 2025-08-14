@@ -72,7 +72,6 @@ static void synchronize() {
             case TOKEN_FOR:
             case TOKEN_IF:
             case TOKEN_WHILE:
-            case TOKEN_PRINT:
                 return;
             default:
                 ;
@@ -118,13 +117,6 @@ static ASTNode* make_node_var_decl(String* name, ASTNode* initializer) {
 static ASTNode* make_node_expr_stmt(ASTNode* expression) {
     ASTNodeExprStmt* node = malloc(sizeof(ASTNodeExprStmt));
     node->base.type = AST_NODE_EXPR_STMT;
-    node->expression = expression;
-    return (ASTNode*)node;
-}
-
-static ASTNode* make_node_print_stmt(ASTNode* expression) {
-    ASTNodeExprStmt* node = malloc(sizeof(ASTNodeExprStmt));
-    node->base.type = AST_NODE_PRINT_STMT;
     node->expression = expression;
     return (ASTNode*)node;
 }
@@ -207,7 +199,6 @@ static ASTNode* parse_declaration();
 static ASTNode* parse_variable_declaration();
 static ASTNode* parse_statement();
 static ASTNode* parse_expression_statement();
-static ASTNode* parse_print_statement();
 static ASTNode* parse_if_statement();
 static ASTNode* parse_while_statement();
 static ASTNode* parse_for_statement();
@@ -265,7 +256,6 @@ static ASTNode* parse_variable_declaration() {
 }
 
 static ASTNode* parse_statement() {
-    if (match(1, TOKEN_PRINT)) return parse_print_statement();
     if (match(1, TOKEN_IF)) return parse_if_statement();
     if (match(1, TOKEN_WHILE)) return parse_while_statement();
     if (match(1, TOKEN_FOR)) return parse_for_statement();
@@ -283,12 +273,6 @@ static ASTNode* parse_expression_statement() {
     ASTNode* expression = parse_expression();
     consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
     return make_node_expr_stmt(expression);
-}
-
-static ASTNode* parse_print_statement() {
-    ASTNode* expression = parse_expression();
-    consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
-    return make_node_print_stmt(expression);
 }
 
 static ASTNode* parse_if_statement() {
@@ -562,10 +546,6 @@ void parser_free_ast(ASTNode* root) {
         case AST_NODE_EXPR_STMT: {
             ASTNodeExprStmt* expr_stmt = (ASTNodeExprStmt*)root;
             free(expr_stmt->expression);
-        } break;
-        case AST_NODE_PRINT_STMT: {
-            ASTNodeExprStmt* print_stmt = (ASTNodeExprStmt*)root;
-            free(print_stmt->expression);
         } break;
         case AST_NODE_IF_STMT: {
             ASTNodeIfStmt* if_stmt = (ASTNodeIfStmt*)root;

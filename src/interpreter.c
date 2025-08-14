@@ -48,7 +48,16 @@ static Value clock_native(int argc, Value* argv) {
     return NUMBER_VALUE((double)clock() / CLOCKS_PER_SEC);
 }
 
+static Value print_native(int argc, Value* argv) {
+    for (int i = 0; i < argc; ++i) {
+        print_value(argv[i]);
+    }
+    fputc('\n', stdout);
+    return NULL_VALUE();
+}
+
 static void add_natives(Environment* global_scope) {
+    env_define(global_scope, string_from("print"), NATIVE_VALUE(print_native));
     env_define(global_scope, string_from("clock"), NATIVE_VALUE(clock_native));
 }
 
@@ -78,12 +87,6 @@ Value evaluate(ASTNode* root) {
         case AST_NODE_EXPR_STMT: {
             ASTNodeExprStmt* expr_stmt = (ASTNodeExprStmt*)root;
             evaluate(expr_stmt->expression);
-        } break;
-        case AST_NODE_PRINT_STMT: {
-            ASTNodeExprStmt* print_stmt = (ASTNodeExprStmt*)root;
-            Value value = evaluate(print_stmt->expression);
-            print_value(value);
-            fputs("\n", stdout);
         } break;
         case AST_NODE_IF_STMT: {
             ASTNodeIfStmt* if_stmt = (ASTNodeIfStmt*)root;
