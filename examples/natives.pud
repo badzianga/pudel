@@ -1,0 +1,17 @@
+// This program shows some native functions
+var start = clock();
+
+var fib1 = 0;
+var fib2 = 1;
+while (fib1 < 1000) {
+    print(fib1);
+
+    var temp = fib1;
+    fib1 = fib2;
+    fib2 = temp + fib1;
+}
+
+print(clock() - start);
+
+var x = input("Input text: ");
+print("Got: ", x);

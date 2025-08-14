@@ -1,3 +1,4 @@
+// This program shows variable scopes.
 var a = "global a";
 var b = "global b";
 var c = "global c";
@@ -6,14 +7,14 @@ if (true) {
     var b = "outer b";
     if (true) {
         var a = "inner a";
-        print a;
-        print b;
-        print c;
+        print(a);
+        print(b);
+        print(c);
     }
-    print a;
-    print b;
-    print c;
+    print(a);
+    print(b);
+    print(c);
 }
-print a;
-print b;
-print c;
+print(a);
+print(b);
+print(c);

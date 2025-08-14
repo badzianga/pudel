@@ -5,4 +5,4 @@ var n = 5;
 for (var i = 1; i <= n; i += 1) {
     factorial *= i;
 }
-print factorial;
+print(factorial);
