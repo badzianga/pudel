@@ -58,8 +58,8 @@ static Value print_native(int argc, Value* argv) {
 }
 
 static Value input_native(int argc, Value* argv) {
-    if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
-    print_value(argv[0]);
+    if (argc > 1) runtime_error("expected 0 or 1 argument but got %d", argc);
+    else if (argc == 1) print_value(argv[0]);
     char buffer[1024];
     if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
         buffer[strcspn(buffer, "\n")] = '\0';
