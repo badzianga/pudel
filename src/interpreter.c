@@ -13,10 +13,11 @@ static Environment* env = NULL;
 
 static bool is_truthy(Value value) {
     switch (value.type) {
-        case VALUE_NULL: return false;
+        case VALUE_NULL:   return false;
         case VALUE_NUMBER: return value.number != 0.0;
-        case VALUE_BOOL: return value.boolean;
+        case VALUE_BOOL:   return value.boolean;
         case VALUE_STRING: return value.string->length != 0;
+        case VALUE_LIST:   return value.list->length != 0;
         case VALUE_NATIVE: return true;
     }
     return false;

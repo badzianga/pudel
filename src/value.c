@@ -10,6 +10,7 @@ const char* value_type_as_cstr(ValueType type) {
         case VALUE_NUMBER: return "number";
         case VALUE_BOOL:   return "bool";
         case VALUE_STRING: return "string";
+        case VALUE_LIST:   return "list";
         case VALUE_NATIVE: return "native_func";
     }
     return "unknown";
@@ -22,6 +23,7 @@ bool values_equal(Value a, Value b) {
         case VALUE_NUMBER: return a.number == b.number;
         case VALUE_BOOL:   return a.boolean == b.boolean;
         case VALUE_STRING: return strings_equal(a.string, b.string);
+        case VALUE_LIST:   return lists_equal(a.list, b.list);
         case VALUE_NATIVE: return a.native == b.native;
         default:           return false;
     }
@@ -40,6 +42,9 @@ void print_value(Value value) {
         } break;
         case VALUE_STRING: {
             printf("%s", value.string->data);
+        } break;
+        case VALUE_LIST: {
+            printf("<list>");  // TODO: print list content with raw strings = ["hello\t"] instead of [hello  ] 
         } break;
         case VALUE_NATIVE: {
             printf("<native>");  // TODO: print proper native function value
@@ -69,4 +74,12 @@ String* string_concat(String* a, String* b) {
 
 bool strings_equal(String* a, String* b) {
     return a->length == b->length && strcmp(a->data, b->data) == 0;
+}
+
+bool lists_equal(List* a, List* b) {
+    if (a->length != b->length) return false;
+    for (int i = 0; i < a->length; ++i) {
+        if (!values_equal(a->values[i], b->values[i])) return false;
+    }
+    return true;
 }
