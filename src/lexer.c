@@ -162,6 +162,10 @@ static Token next_token() {
             return make_token(TOKEN_LEFT_BRACE);
         case '}':
             return make_token(TOKEN_RIGHT_BRACE);
+        case '[':
+            return make_token(TOKEN_LEFT_BRACKET);
+        case ']':
+            return make_token(TOKEN_RIGHT_BRACKET);
         case ';':
             return make_token(TOKEN_SEMICOLON);
         case ',':
@@ -228,6 +232,8 @@ const char* token_as_cstr(TokenType type) {
         ")",
         "{",
         "}",
+        "[",
+        "]",
         ";",
         ",",
 
