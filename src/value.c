@@ -10,7 +10,7 @@ bool values_equal(Value a, Value b) {
         case VALUE_NUMBER: return a.number == b.number;
         case VALUE_BOOL:   return a.boolean == b.boolean;
         case VALUE_STRING: return strings_equal(a.string, b.string);
-        case VALUE_NATIVE: return false;  // TODO: handle native functions equality
+        case VALUE_NATIVE: return a.native == b.native;
         default:           return false;
     }
 }
