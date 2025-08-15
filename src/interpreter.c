@@ -74,11 +74,60 @@ static Value typeof_native(int argc, Value* argv) {
     return STRING_VALUE(string_from(value_type_as_cstr(argv[0].type)));
 }
 
+static Value number_native(int argc, Value* argv) {
+    if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
+    Value arg = argv[0];
+    switch (arg.type) {
+        case VALUE_NULL:   return NUMBER_VALUE(0.0);
+        case VALUE_NUMBER: return arg;
+        case VALUE_BOOL:   return NUMBER_VALUE(arg.boolean ? 1.0 : 0.0);
+        case VALUE_STRING: return NUMBER_VALUE(strtod(arg.string->data, NULL));
+        default: runtime_error("cannot convert from %s to number", value_type_as_cstr(arg.type));
+    }
+    return NULL_VALUE();
+}
+
+static Value bool_native(int argc, Value* argv) {
+    if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
+    Value arg = argv[0];
+    switch (arg.type) {
+        case VALUE_NULL:   return BOOL_VALUE(false);
+        case VALUE_NUMBER: return BOOL_VALUE(arg.number != 0.0);
+        case VALUE_BOOL:   return arg;
+        case VALUE_STRING: return BOOL_VALUE(arg.string->length != 0);
+        case VALUE_NATIVE: return BOOL_VALUE(true);
+        default: runtime_error("cannot convert from %s to bool", value_type_as_cstr(arg.type));
+    }
+    return NULL_VALUE();
+}
+
+static Value string_native(int argc, Value* argv) {
+    if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
+    Value arg = argv[0];
+    switch (arg.type) {
+        case VALUE_NULL:   return STRING_VALUE(string_from("null"));
+        case VALUE_NUMBER: {
+            char buffer[64];
+            snprintf(buffer, sizeof(buffer), "%lf", arg.number);
+            return STRING_VALUE(string_from(buffer));
+        }
+        case VALUE_BOOL:   return STRING_VALUE(string_from(arg.boolean ? "true" : "false"));
+        case VALUE_STRING: return arg;
+        case VALUE_NATIVE: return STRING_VALUE(string_from("<native function>")); //TODO: also print name of function
+        default: runtime_error("cannot convert from %s to string", value_type_as_cstr(arg.type));
+    }
+    return NULL_VALUE();
+}
+
 static void add_natives(Environment* global_scope) {
     env_define(global_scope, string_from("clock"), NATIVE_VALUE(clock_native));
     env_define(global_scope, string_from("print"), NATIVE_VALUE(print_native));
     env_define(global_scope, string_from("input"), NATIVE_VALUE(input_native));
     env_define(global_scope, string_from("typeof"), NATIVE_VALUE(typeof_native));
+
+    env_define(global_scope, string_from("number"), NATIVE_VALUE(number_native));
+    env_define(global_scope, string_from("bool"), NATIVE_VALUE(bool_native));
+    env_define(global_scope, string_from("string"), NATIVE_VALUE(string_native));
 }
 
 Value evaluate(ASTNode* root) {
