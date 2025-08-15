@@ -40,6 +40,8 @@ struct Value {
 #define STRING_VALUE(value)   ((Value){ .type = VALUE_STRING, .string = value })
 #define NATIVE_VALUE(value)   ((Value){ .type = VALUE_NATIVE, .native = value })
 
+const char* value_type_as_cstr(ValueType type);
+
 void print_value(Value value);
 bool values_equal(Value a, Value b);
 

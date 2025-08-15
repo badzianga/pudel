@@ -3,6 +3,18 @@
 #include <string.h>
 #include "value.h"
 
+
+const char* value_type_as_cstr(ValueType type) {
+    switch (type) {
+        case VALUE_NULL:   return "null";
+        case VALUE_NUMBER: return "number";
+        case VALUE_BOOL:   return "bool";
+        case VALUE_STRING: return "string";
+        case VALUE_NATIVE: return "native_func";
+    }
+    return "unknown";
+}
+
 bool values_equal(Value a, Value b) {
     if (a.type != b.type) return false;
     switch (a.type) {
