@@ -69,10 +69,23 @@ static Value input_native(int argc, Value* argv) {
     return NULL_VALUE();
 }
 
+static Value typeof_native(int argc, Value* argv) {
+    if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
+    switch (argv[0].type) {
+        case VALUE_NULL:   return STRING_VALUE(string_from("null"));
+        case VALUE_NUMBER: return STRING_VALUE(string_from("number"));
+        case VALUE_BOOL:   return STRING_VALUE(string_from("bool"));
+        case VALUE_STRING: return STRING_VALUE(string_from("string"));
+        case VALUE_NATIVE: return STRING_VALUE(string_from("native"));
+    }
+    return STRING_VALUE(string_from("unknown"));
+}
+
 static void add_natives(Environment* global_scope) {
     env_define(global_scope, string_from("clock"), NATIVE_VALUE(clock_native));
     env_define(global_scope, string_from("print"), NATIVE_VALUE(print_native));
     env_define(global_scope, string_from("input"), NATIVE_VALUE(input_native));
+    env_define(global_scope, string_from("typeof"), NATIVE_VALUE(typeof_native));
 }
 
 Value evaluate(ASTNode* root) {
