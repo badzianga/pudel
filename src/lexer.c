@@ -68,8 +68,27 @@ static void skip_whitespace() {
                 advance();
                 break;
             case '/':
+                // simple comment - //
                 if (peek_next() == '/') {
                     while (peek() != '\n' && !is_at_end()) advance();
+                }
+                // multi-line comment - /* */
+                else if (peek_next() == '*') {
+                    advance();  // consume /
+                    advance();  // consume *
+                    for (;;) {
+                        char c = advance();
+                        if (c == '\0') {
+                            break; // TODO: return error token - unterminated /*
+                        }
+                        else if (c == '\n') {
+                            ++lexer.line;
+                        }
+                        else if (c == '*' && peek() == '/') {
+                            advance(); // consume /
+                            break;
+                        }
+                    }
                 }
                 else {
                     return;
