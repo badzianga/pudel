@@ -10,7 +10,9 @@ typedef enum TokenType {
     TOKEN_LEFT_BRACKET,    // [
     TOKEN_RIGHT_BRACKET,   // ]
     TOKEN_SEMICOLON,       // ;
+    TOKEN_COLON,           // :
     TOKEN_COMMA,           // ,
+    TOKEN_QUESTION,        // ?
 
     TOKEN_PLUS,            // +
     TOKEN_PLUS_EQUAL,      // +=
