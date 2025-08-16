@@ -589,14 +589,14 @@ void parser_free_ast(ASTNode* root) {
         case AST_NODE_BLOCK: {
             ASTNodeBlock* block = (ASTNodeBlock*)root;
             for (int i = 0; i < block->count; ++i) {
-                free(block->statements[i]);
+                parser_free_ast(block->statements[i]);
             }
             free(block->statements);
         } break;
         case AST_NODE_VAR_DECL: {
             ASTNodeVarDecl* var_decl = (ASTNodeVarDecl*)root;
             free(var_decl->name);
-            free(var_decl->initializer);
+            parser_free_ast(var_decl->initializer);
         } break;
         case AST_NODE_EXPR_STMT: {
             ASTNodeExprStmt* expr_stmt = (ASTNodeExprStmt*)root;
@@ -605,35 +605,35 @@ void parser_free_ast(ASTNode* root) {
         case AST_NODE_TERNARY:
         case AST_NODE_IF_STMT: {
             ASTNodeIfStmt* if_stmt = (ASTNodeIfStmt*)root;
-            free(if_stmt->condition);
-            free(if_stmt->then_branch);
-            free(if_stmt->else_branch);
+            parser_free_ast(if_stmt->condition);
+            parser_free_ast(if_stmt->then_branch);
+            parser_free_ast(if_stmt->else_branch);
         } break;
         case AST_NODE_WHILE_STMT: {
             ASTNodeWhileStmt* while_stmt = (ASTNodeWhileStmt*)root;
-            free(while_stmt->condition);
-            free(while_stmt->body);
+            parser_free_ast(while_stmt->condition);
+            parser_free_ast(while_stmt->body);
         } break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
             free(assignment->name);
-            free(assignment->value);
+            parser_free_ast(assignment->value);
         } break;
         case AST_NODE_LOGICAL:
         case AST_NODE_BINARY: {
             ASTNodeBinary* binary = (ASTNodeBinary*)root;
-            free(binary->left);
-            free(binary->right);
+            parser_free_ast(binary->left);
+            parser_free_ast(binary->right);
         } break;
         case AST_NODE_UNARY: {
             ASTNodeUnary* unary = (ASTNodeUnary*)root;
-            free(unary->right);
+            parser_free_ast(unary->right);
         } break;
         case AST_NODE_CALL: {
             ASTNodeCall* call = (ASTNodeCall*)root;
-            free(call->callee);
+            parser_free_ast(call->callee);
             for (int i = 0; i < call->count; ++i) {
-                free(call->arguments[i]);
+                parser_free_ast(call->arguments[i]);
             }
             free(call->arguments);
         } break;
@@ -650,7 +650,7 @@ void parser_free_ast(ASTNode* root) {
         case AST_NODE_LIST: {
             ASTNodeList* list = (ASTNodeList*)root;
             for (int i = 0; i < list->count; ++i) {
-                free(list->expressions[i]);
+                parser_free_ast(list->expressions[i]);
             }
             free(list->expressions);
         }
