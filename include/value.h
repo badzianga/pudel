@@ -60,4 +60,5 @@ String* string_from(const char* data);
 String* string_concat(String* a, String* b);
 bool strings_equal(String* a, String* b);
 
+List* list_new(int length);
 bool lists_equal(List* a, List* b);

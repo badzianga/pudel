@@ -76,6 +76,13 @@ bool strings_equal(String* a, String* b) {
     return a->length == b->length && strcmp(a->data, b->data) == 0;
 }
 
+List* list_new(int length) {
+    List* list = calloc(1, sizeof(List));
+    list->values = calloc(length, sizeof(Value));
+    list->capacity = length;
+    return list;
+}
+
 bool lists_equal(List* a, List* b) {
     if (a->length != b->length) return false;
     for (int i = 0; i < a->length; ++i) {
