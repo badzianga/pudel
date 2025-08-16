@@ -203,6 +203,12 @@ static ASTNode* make_node_var(String* name) {
     return (ASTNode*)node;
 }
 
+static ASTNode* make_node_list() {
+    ASTNodeList* node = calloc(1, sizeof(ASTNodeList));
+    node->base.type = AST_NODE_LIST;
+    return (ASTNode*)node;
+}
+
 static ASTNode* parse_program();
 static ASTNode* parse_declaration();
 static ASTNode* parse_variable_declaration();
@@ -225,6 +231,7 @@ static ASTNode* parse_factor();
 static ASTNode* parse_unary();
 static ASTNode* parse_call();
 static ASTNode* parse_primary();
+static ASTNode* parse_list();
 
 static ASTNode* parse_program() {
     ASTNodeBlock* block = (ASTNodeBlock*)make_node_program();
@@ -531,6 +538,11 @@ static ASTNode* parse_primary() {
         consume_expected(TOKEN_RIGHT_PAREN, "expected closing parenthesis");
         return inside;
     }
+    if (match(1, TOKEN_LEFT_BRACKET)) {
+        ASTNode* list = parse_list();
+        consume_expected(TOKEN_RIGHT_BRACKET, "expected closing bracket");
+        return list;
+    }
 
     if (parser.current->type == TOKEN_ERROR) {
         error_at(parser.current, parser.current->value);
@@ -539,6 +551,24 @@ static ASTNode* parse_primary() {
         error_at(parser.current, "unexpected value");
     }
     return NULL;
+}
+
+static ASTNode* parse_list() {
+    ASTNodeList* list = (ASTNodeList*)make_node_list();
+
+    if (parser.current->type == TOKEN_RIGHT_BRACKET) {
+        return (ASTNode*)list;
+    }
+
+    do {
+        if (list->capacity < list->count + 1) {
+            list->capacity = GROW_CAPACITY(list->capacity);
+            list->expressions = GROW_ARRAY(ASTNode*, list->expressions, list->capacity);
+        }
+        list->expressions[list->count++] = parse_ternary();
+    } while (match(1, TOKEN_COMMA));
+
+    return (ASTNode*)list;
 }
 
 bool parser_parse(TokenArray* token_array, ASTNode** output) {
@@ -617,6 +647,13 @@ void parser_free_ast(ASTNode* root) {
             ASTNodeVar* var = (ASTNodeVar*)root;
             free(var->name);
         } break;
+        case AST_NODE_LIST: {
+            ASTNodeList* list = (ASTNodeList*)root;
+            for (int i = 0; i < list->count; ++i) {
+                free(list->expressions[i]);
+            }
+            free(list->expressions);
+        }
     }
     free(root);
 }

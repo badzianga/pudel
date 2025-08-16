@@ -131,6 +131,13 @@ void debug_print_ast(ASTNode* root, int indent) {
             ASTNodeVar* var = (ASTNodeVar*)root;
             printf("Variable: %s\n", var->name->data);
         } break;
+        case AST_NODE_LIST: {
+            ASTNodeList* list = (ASTNodeList*)root;
+            printf("List: %d\n", list->count);
+            for (int i = 0; i < list->count; ++i) {
+                debug_print_ast(list->expressions[i], indent + 1);
+            }
+        } break;
         default: {
             fprintf(stderr, "Unknown: ID=%d\n", root->type);
         } break;

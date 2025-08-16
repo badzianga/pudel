@@ -335,6 +335,15 @@ Value evaluate(ASTNode* root) {
             }
             return *variable;
         }
+        case AST_NODE_LIST: {
+            ASTNodeList* list_node = (ASTNodeList*)root;
+            List* list = list_new(list_node->count);
+            list->length = list_node->count;
+            for (int i = 0; i < list_node->count; ++i) {
+                list->values[i] = evaluate(list_node->expressions[i]);
+            }
+            return LIST_VALUE(list);
+        }
     }
     return NULL_VALUE();
 }

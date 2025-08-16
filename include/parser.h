@@ -17,6 +17,7 @@ typedef enum {
     AST_NODE_UNARY,
     AST_NODE_CALL,
     AST_NODE_LITERAL,
+    AST_NODE_LIST,
     AST_NODE_VAR,
 } ASTNodeType;
 
@@ -103,6 +104,14 @@ typedef struct {
 
     String* name;
 } ASTNodeVar;
+
+typedef struct {
+    ASTNode base;
+
+    ASTNode** expressions;
+    int count;
+    int capacity;
+} ASTNodeList;
 
 bool parser_parse(TokenArray* token_array, ASTNode** output);
 void parser_free_ast(ASTNode* root);
