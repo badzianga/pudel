@@ -189,6 +189,14 @@ static ASTNode* make_node_call(ASTNode* callee) {
     return (ASTNode*)node; 
 }
 
+static ASTNode* make_node_subscription(ASTNode* expression, ASTNode* index) {
+    ASTNodeSubscription* node = malloc(sizeof(ASTNodeSubscription));
+    node->base.type = AST_NODE_SUBSCRIPTION;
+    node->expression = expression;
+    node->index = index;
+    return (ASTNode*)node;
+}
+
 static ASTNode* make_node_literal(Value value) {
     ASTNodeLiteral* node = malloc(sizeof(ASTNodeLiteral));
     node->base.type = AST_NODE_LITERAL;
@@ -495,11 +503,21 @@ static ASTNode* finish_call(ASTNode* callee) {
     return (ASTNode*)call;
 }
 
+static ASTNode* finish_subscription(ASTNode* expression) {
+    ASTNode* index = parse_ternary();
+
+    consume_expected(TOKEN_RIGHT_BRACKET, "expected ']' after index");
+
+    return make_node_subscription(expression, index);
+}
+
 static ASTNode* parse_call() {
     ASTNode* expr = parse_primary();
     for (;;) {
         if (match(1, TOKEN_LEFT_PAREN)) {
             expr = finish_call(expr);
+        } else if (match(1, TOKEN_LEFT_BRACKET)) {
+            expr = finish_subscription(expr);
         } else {
             break;
         }
@@ -636,6 +654,11 @@ void parser_free_ast(ASTNode* root) {
                 parser_free_ast(call->arguments[i]);
             }
             free(call->arguments);
+        } break;
+        case AST_NODE_SUBSCRIPTION: {
+            ASTNodeSubscription* subscription = (ASTNodeSubscription*)root;
+            parser_free_ast(subscription->expression);
+            parser_free_ast(subscription->index);
         } break;
         case AST_NODE_LITERAL: {
             ASTNodeLiteral* literal = (ASTNodeLiteral*)root;

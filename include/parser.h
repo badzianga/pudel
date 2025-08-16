@@ -16,6 +16,7 @@ typedef enum {
     AST_NODE_BINARY,
     AST_NODE_UNARY,
     AST_NODE_CALL,
+    AST_NODE_SUBSCRIPTION,
     AST_NODE_LITERAL,
     AST_NODE_LIST,
     AST_NODE_VAR,
@@ -92,6 +93,13 @@ typedef struct {
     int count;
     int capacity;
 } ASTNodeCall;
+
+typedef struct {
+    ASTNode base;
+
+    ASTNode* expression;
+    ASTNode* index;
+} ASTNodeSubscription;
 
 typedef struct {
     ASTNode base;

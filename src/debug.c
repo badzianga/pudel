@@ -121,6 +121,16 @@ void debug_print_ast(ASTNode* root, int indent) {
                 debug_print_ast(call->arguments[i], indent + 1);
             }
         } break;
+        case AST_NODE_SUBSCRIPTION: {
+            ASTNodeSubscription* subscription = (ASTNodeSubscription*)root;
+            printf("Subscription:\n");
+            for (int i = 0; i < indent; ++i) printf("  ");
+            printf("Expression:\n");
+            debug_print_ast(subscription->expression, indent + 1);
+            for (int i = 0; i < indent; ++i) printf("  ");
+            printf("Index:\n");
+            debug_print_ast(subscription->index, indent + 1);
+        } break;
         case AST_NODE_LITERAL: {
             ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
             fputs("Literal: ", stdout);
