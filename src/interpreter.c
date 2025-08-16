@@ -323,6 +323,22 @@ Value evaluate(ASTNode* root) {
             free(args);
             return result;
         } break;
+        case AST_NODE_SUBSCRIPTION: {
+            ASTNodeSubscription* subscription = (ASTNodeSubscription*)root;
+            Value list = evaluate(subscription->expression);
+            if (!IS_LIST(list)) {
+                runtime_error("object is not subscriptable");
+            }
+            Value index = evaluate(subscription->index);
+            if (!IS_NUMBER(index)) {
+                runtime_error("list index must be a number");
+            }
+            int idx = (int)index.number;
+            if (idx < 0 || idx >= list.list->length) {
+                runtime_error("index out of range");
+            }
+            return list.list->values[idx];
+        } break;
         case AST_NODE_LITERAL: {
             ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
             return literal->value;
