@@ -147,6 +147,15 @@ static ASTNode* make_node_assignment(String* name, TokenType op, ASTNode* value)
     return (ASTNode*)node;
 }
 
+static ASTNode* make_node_ternary(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
+    ASTNodeIfStmt* node = malloc(sizeof(ASTNodeIfStmt));
+    node->base.type = AST_NODE_TERNARY;
+    node->condition = condition;
+    node->then_branch = then_branch;
+    node->else_branch = else_branch;
+    return (ASTNode*)node;
+}
+
 static ASTNode* make_node_logical(ASTNode* left, TokenType op, ASTNode* right) {
     ASTNodeBinary* node = malloc(sizeof(ASTNodeBinary));
     node->base.type = AST_NODE_LOGICAL;
@@ -206,6 +215,7 @@ static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
 static ASTNode* parse_assignment();
+static ASTNode* parse_ternary();
 static ASTNode* parse_or();
 static ASTNode* parse_and();
 static ASTNode* parse_equality();
@@ -362,7 +372,7 @@ static ASTNode* parse_expression() {
 }
 
 static ASTNode* parse_assignment() {
-    ASTNode* expression = parse_or();
+    ASTNode* expression = parse_ternary();
 
     if (match(5, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL)) {
         Token* op_token = previous();
@@ -376,6 +386,21 @@ static ASTNode* parse_assignment() {
     }
 
     return expression;
+}
+
+static ASTNode* parse_ternary() {
+    ASTNode* condition = parse_or();
+
+    if (match(1, TOKEN_QUESTION)) {
+        ASTNode* then_branch = parse_expression();
+        
+        consume_expected(TOKEN_COLON, "expected ':' after then branch");
+
+        ASTNode* else_branch = parse_ternary();
+
+        return make_node_ternary(condition, then_branch, else_branch);
+    }
+    return condition;
 }
 
 static ASTNode* parse_or() {
@@ -547,6 +572,7 @@ void parser_free_ast(ASTNode* root) {
             ASTNodeExprStmt* expr_stmt = (ASTNodeExprStmt*)root;
             free(expr_stmt->expression);
         } break;
+        case AST_NODE_TERNARY:
         case AST_NODE_IF_STMT: {
             ASTNodeIfStmt* if_stmt = (ASTNodeIfStmt*)root;
             free(if_stmt->condition);

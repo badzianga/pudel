@@ -214,6 +214,13 @@ Value evaluate(ASTNode* root) {
             }
             return *var;
         }
+        case AST_NODE_TERNARY: {
+            ASTNodeIfStmt* ternary = (ASTNodeIfStmt*)root;
+            if (is_truthy(evaluate(ternary->condition))) {
+                return evaluate(ternary->then_branch);
+            }
+            return evaluate(ternary->else_branch);
+        }
         case AST_NODE_LOGICAL: {
             ASTNodeBinary* binary = (ASTNodeBinary*)root;
             Value left = evaluate(binary->left);
