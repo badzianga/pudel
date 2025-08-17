@@ -177,9 +177,16 @@ Value evaluate(ASTNode* root) {
         } break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
-            Value* var = env_get_ref(env, assignment->name);
-            if (var == NULL) {
-                runtime_error("undeclared identifier '%s'", assignment->name->data);
+            Value* var = NULL;
+            if (assignment->target->type == AST_NODE_VAR) {
+                ASTNodeVar* target = (ASTNodeVar*)assignment->target;
+                var = env_get_ref(env, target->name);
+                if (var == NULL) {
+                    runtime_error("undeclared identifier '%s'", target->name->data);
+                }
+            }
+            else if (assignment->target->type == AST_NODE_SUBSCRIPTION) {
+                runtime_error("assignment to list is not supported yet");
             }
             Value value = evaluate(assignment->value);
             switch(assignment->op) {

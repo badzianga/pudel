@@ -85,11 +85,8 @@ void debug_print_ast(ASTNode* root, int indent) {
         } break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
-            printf(
-                "Assignment: %s %s\n",
-                assignment->name->data,
-                token_as_cstr(assignment->op)
-            );
+            printf("Assignment: %s\n", token_as_cstr(assignment->op));
+            debug_print_ast(assignment->target, indent + 1);
             debug_print_ast(assignment->value, indent + 1);
         } break;
         case AST_NODE_LOGICAL: {

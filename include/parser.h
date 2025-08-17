@@ -66,7 +66,7 @@ typedef struct {
     ASTNode base;
 
     TokenType op;
-    String* name;
+    ASTNode* target;
     ASTNode* value;
 } ASTNodeAssignment;
 

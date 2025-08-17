@@ -138,10 +138,10 @@ static ASTNode* make_node_while_stmt(ASTNode* condition, ASTNode* body) {
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_assignment(String* name, TokenType op, ASTNode* value) {
+static ASTNode* make_node_assignment(ASTNode* target, TokenType op, ASTNode* value) {
     ASTNodeAssignment* node = malloc(sizeof(ASTNodeAssignment));
     node->base.type = AST_NODE_ASSIGNMENT;
-    node->name = name;
+    node->target = target;
     node->op = op;
     node->value = value;
     return (ASTNode*)node;
@@ -387,20 +387,20 @@ static ASTNode* parse_expression() {
 }
 
 static ASTNode* parse_assignment() {
-    ASTNode* expression = parse_ternary();
+    ASTNode* target = parse_ternary();
 
     if (match(5, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL)) {
         Token* op_token = previous();
         ASTNode* value = parse_assignment();
         
-        if (expression->type == AST_NODE_VAR) {
-            return make_node_assignment(((ASTNodeVar*)expression)->name, op_token->type, value);
+        if (target->type == AST_NODE_VAR || target->type == AST_NODE_SUBSCRIPTION) {
+            return make_node_assignment(target, op_token->type, value);
         }
 
         error_at(op_token, "invalid assignment target");
     }
 
-    return expression;
+    return target;
 }
 
 static ASTNode* parse_ternary() {
@@ -634,7 +634,7 @@ void parser_free_ast(ASTNode* root) {
         } break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
-            free(assignment->name);
+            parser_free_ast(assignment->target);
             parser_free_ast(assignment->value);
         } break;
         case AST_NODE_LOGICAL:
