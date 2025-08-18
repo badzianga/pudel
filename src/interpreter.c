@@ -20,6 +20,7 @@ static bool is_truthy(Value value) {
         case VALUE_STRING: return value.string->length != 0;
         case VALUE_LIST:   return value.list->length != 0;
         case VALUE_NATIVE: return true;
+        case VALUE_FUNCTION: return true;
     }
     return false;
 }

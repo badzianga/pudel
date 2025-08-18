@@ -5,26 +5,28 @@
 
 const char* value_type_as_cstr(ValueType type) {
     switch (type) {
-        case VALUE_NULL:   return "null";
-        case VALUE_NUMBER: return "number";
-        case VALUE_BOOL:   return "bool";
-        case VALUE_STRING: return "string";
-        case VALUE_LIST:   return "list";
-        case VALUE_NATIVE: return "native_func";
+        case VALUE_NULL:     return "null";
+        case VALUE_NUMBER:   return "number";
+        case VALUE_BOOL:     return "bool";
+        case VALUE_STRING:   return "string";
+        case VALUE_LIST:     return "list";
+        case VALUE_NATIVE:   return "native_func";
+        case VALUE_FUNCTION: return "function";
     }
     return "unknown";
 }
 
 bool values_equal(Value a, Value b) {
-    if (a.type != b.type) return false;
+    if (a.type != b.type)    return false;
     switch (a.type) {
-        case VALUE_NULL:   return true;
-        case VALUE_NUMBER: return a.number == b.number;
-        case VALUE_BOOL:   return a.boolean == b.boolean;
-        case VALUE_STRING: return strings_equal(a.string, b.string);
-        case VALUE_LIST:   return lists_equal(a.list, b.list);
-        case VALUE_NATIVE: return a.native == b.native;
-        default:           return false;
+        case VALUE_NULL:     return true;
+        case VALUE_NUMBER:   return a.number == b.number;
+        case VALUE_BOOL:     return a.boolean == b.boolean;
+        case VALUE_STRING:   return strings_equal(a.string, b.string);
+        case VALUE_LIST:     return lists_equal(a.list, b.list);
+        case VALUE_NATIVE:   return a.native == b.native;
+        case VALUE_FUNCTION: return strings_equal(a.function->name, b.function->name) && a.function->param_count == b.function->param_count; 
+        default:             return false;
     }
 }
 
@@ -61,7 +63,10 @@ void print_value(Value value) {
         } break;
         case VALUE_NATIVE: {
             printf("<native>");  // TODO: print proper native function value
-        }
+        } break;
+        case VALUE_FUNCTION: {
+            printf("<function>");  // TODO: print function name
+        } break;
     }
 }
 

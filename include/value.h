@@ -8,6 +8,7 @@ typedef enum {
     VALUE_STRING,
     VALUE_LIST,
     VALUE_NATIVE,
+    VALUE_FUNCTION,
 } ValueType;
 
 typedef struct {
@@ -25,6 +26,15 @@ typedef struct {
 
 typedef Value (*NativeFn)(int argc, Value* argv);
 
+struct ASTNode;
+
+typedef struct {
+    String* name;
+    String** params;
+    int param_count;
+    struct ASTNode* body;
+} Function;
+
 struct Value {
     ValueType type;
     union {
@@ -33,6 +43,7 @@ struct Value {
         String* string;
         List* list;
         NativeFn native;
+        Function* function;
     };
 };
 
@@ -42,13 +53,15 @@ struct Value {
 #define IS_STRING(value)    ((value).type == VALUE_STRING)
 #define IS_LIST(value)      ((value).type == VALUE_LIST)
 #define IS_NATIVE(value)    ((value).type == VALUE_NATIVE)
+#define IS_FUNCTION(value)  ((value).type == VALUE_FUNCTION)
 
-#define NULL_VALUE()          ((Value){ .type = VALUE_NULL,   .number = 0 })
-#define NUMBER_VALUE(value)   ((Value){ .type = VALUE_NUMBER, .number = value })
-#define BOOL_VALUE(value)     ((Value){ .type = VALUE_BOOL,   .boolean = value })
-#define STRING_VALUE(value)   ((Value){ .type = VALUE_STRING, .string = value })
-#define LIST_VALUE(value)     ((Value){ .type = VALUE_LIST,   .list = value })
-#define NATIVE_VALUE(value)   ((Value){ .type = VALUE_NATIVE, .native = value })
+#define NULL_VALUE()          ((Value){ .type = VALUE_NULL,     .number = 0 })
+#define NUMBER_VALUE(value)   ((Value){ .type = VALUE_NUMBER,   .number = value })
+#define BOOL_VALUE(value)     ((Value){ .type = VALUE_BOOL,     .boolean = value })
+#define STRING_VALUE(value)   ((Value){ .type = VALUE_STRING,   .string = value })
+#define LIST_VALUE(value)     ((Value){ .type = VALUE_LIST,     .list = value })
+#define NATIVE_VALUE(value)   ((Value){ .type = VALUE_NATIVE,   .native = value })
+#define FUNCTION_VALUE(value) ((Value){ .type = VALUE_FUNCTION, .function = value })
 
 const char* value_type_as_cstr(ValueType type);
 

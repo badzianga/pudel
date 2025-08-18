@@ -22,7 +22,7 @@ typedef enum {
     AST_NODE_VAR,
 } ASTNodeType;
 
-typedef struct {
+typedef struct ASTNode {
     ASTNodeType type;
 } ASTNode;
 
