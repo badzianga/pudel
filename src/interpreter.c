@@ -6,6 +6,7 @@
 #include "environment.h"
 #include "interpreter.h"
 #include "lexer.h"
+#include "memory.h"
 #include "parser.h"
 #include "value.h"
 
@@ -120,6 +121,26 @@ static Value string_native(int argc, Value* argv) {
     return NULL_VALUE();
 }
 
+static Value append_native(int argc, Value* argv) {
+    if (argc != 2) runtime_error("expected 2 arguments but got %d", argc);
+    Value list = argv[0];
+    Value value = argv[1];
+
+    if (list.list->capacity < list.list->length + 1) {
+        list.list->capacity = GROW_CAPACITY(list.list->capacity);
+        list.list->values = GROW_ARRAY(Value, list.list->values, list.list->capacity);
+    }
+
+    list.list->values[list.list->length++] = value;
+    return NULL_VALUE();
+}
+
+static Value length_native(int argc, Value* argv) {
+    if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
+    Value list = argv[0];
+    return NUMBER_VALUE(list.list->length);
+}
+
 static void add_natives(Environment* global_scope) {
     env_define(global_scope, string_from("clock"), NATIVE_VALUE(clock_native));
     env_define(global_scope, string_from("print"), NATIVE_VALUE(print_native));
@@ -129,6 +150,9 @@ static void add_natives(Environment* global_scope) {
     env_define(global_scope, string_from("number"), NATIVE_VALUE(number_native));
     env_define(global_scope, string_from("bool"), NATIVE_VALUE(bool_native));
     env_define(global_scope, string_from("string"), NATIVE_VALUE(string_native));
+
+    env_define(global_scope, string_from("append"), NATIVE_VALUE(append_native));
+    env_define(global_scope, string_from("length"), NATIVE_VALUE(length_native));
 }
 
 static Value evaluate(ASTNode* root);
