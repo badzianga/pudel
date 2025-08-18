@@ -131,7 +131,25 @@ static void add_natives(Environment* global_scope) {
     env_define(global_scope, string_from("string"), NATIVE_VALUE(string_native));
 }
 
-Value evaluate(ASTNode* root) {
+static Value evaluate(ASTNode* root);
+
+static Value* evaluate_subscription(ASTNodeSubscription* node) {
+    Value list = evaluate(node->expression);
+    if (!IS_LIST(list)) {
+        runtime_error("object is not subscriptable");
+    }
+    Value index = evaluate(node->index);
+    if (!IS_NUMBER(index)) {
+        runtime_error("list index must be a number");
+    }
+    int idx = (int)index.number;
+    if (idx < 0 || idx >= list.list->length) {
+        runtime_error("index out of range");
+    }
+    return &list.list->values[idx];
+}
+
+static Value evaluate(ASTNode* root) {
     switch (root->type) {
         case AST_NODE_PROGRAM:
         case AST_NODE_BLOCK: {
@@ -186,7 +204,7 @@ Value evaluate(ASTNode* root) {
                 }
             }
             else if (assignment->target->type == AST_NODE_SUBSCRIPTION) {
-                runtime_error("assignment to list is not supported yet");
+                var = evaluate_subscription((ASTNodeSubscription*)assignment->target);
             }
             Value value = evaluate(assignment->value);
             switch(assignment->op) {
@@ -332,19 +350,7 @@ Value evaluate(ASTNode* root) {
         } break;
         case AST_NODE_SUBSCRIPTION: {
             ASTNodeSubscription* subscription = (ASTNodeSubscription*)root;
-            Value list = evaluate(subscription->expression);
-            if (!IS_LIST(list)) {
-                runtime_error("object is not subscriptable");
-            }
-            Value index = evaluate(subscription->index);
-            if (!IS_NUMBER(index)) {
-                runtime_error("list index must be a number");
-            }
-            int idx = (int)index.number;
-            if (idx < 0 || idx >= list.list->length) {
-                runtime_error("index out of range");
-            }
-            return list.list->values[idx];
+            return *evaluate_subscription(subscription);
         } break;
         case AST_NODE_LITERAL: {
             ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
