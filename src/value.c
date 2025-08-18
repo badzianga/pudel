@@ -3,7 +3,6 @@
 #include <string.h>
 #include "value.h"
 
-
 const char* value_type_as_cstr(ValueType type) {
     switch (type) {
         case VALUE_NULL:   return "null";
@@ -44,7 +43,21 @@ void print_value(Value value) {
             printf("%s", value.string->data);
         } break;
         case VALUE_LIST: {
-            printf("<list>");  // TODO: print list content with raw strings = ["hello\t"] instead of [hello  ] 
+            fputs("[", stdout);
+            for (int i = 0; i < value.list->length; ++i) {
+                if (value.list->values[i].type != VALUE_STRING) {
+                    print_value(value.list->values[i]);
+                }
+                else {
+                    putchar('"');
+                    print_value(value.list->values[i]);
+                    putchar('"');
+                }
+                if (i < value.list->length - 1) {
+                    printf(", ");
+                }
+            }
+            fputs("]", stdout);
         } break;
         case VALUE_NATIVE: {
             printf("<native>");  // TODO: print proper native function value
