@@ -47,6 +47,11 @@ void debug_print_ast(ASTNode* root, int indent) {
                 debug_print_ast(block->statements[i], indent + 1);
             }
         } break;
+        case AST_NODE_FUNC_DECL: {
+            ASTNodeFuncDecl* func_decl = (ASTNodeFuncDecl*)root;
+            printf("FuncDecl: %s %d\n", func_decl->name->data, func_decl->param_count);
+            debug_print_ast(func_decl->body, indent + 1);
+        } break;
         case AST_NODE_VAR_DECL: {
             ASTNodeVarDecl* var_decl = (ASTNodeVarDecl*)root;
             printf("VarDecl: %s\n", var_decl->name->data);

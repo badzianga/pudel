@@ -39,6 +39,7 @@ typedef enum TokenType {
     TOKEN_ELSE,            // else
     TOKEN_FALSE,           // false
     TOKEN_FOR,             // for
+    TOKEN_FUNC,            // func
     TOKEN_IF,              // if
     TOKEN_NULL,            // null
     TOKEN_OR,              // or

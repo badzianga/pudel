@@ -106,6 +106,16 @@ static ASTNode* make_node_block_filled_with(int argc, ...) {
     return (ASTNode*)node;
 }
 
+static ASTNode* make_node_func_decl(String* name, String** params, int param_count, ASTNode* body) {
+    ASTNodeFuncDecl* node = malloc(sizeof(ASTNodeFuncDecl));
+    node->base.type = AST_NODE_FUNC_DECL;
+    node->name = name;
+    node->params = params;
+    node->param_count = param_count;
+    node->body = body;
+    return (ASTNode*)node;
+}
+
 static ASTNode* make_node_var_decl(String* name, ASTNode* initializer) {
     ASTNodeVarDecl* node = malloc(sizeof(ASTNodeVarDecl));
     node->base.type = AST_NODE_VAR_DECL;
@@ -219,6 +229,7 @@ static ASTNode* make_node_list() {
 
 static ASTNode* parse_program();
 static ASTNode* parse_declaration();
+static ASTNode* parse_function_declaration();
 static ASTNode* parse_variable_declaration();
 static ASTNode* parse_statement();
 static ASTNode* parse_expression_statement();
@@ -262,6 +273,9 @@ static ASTNode* parse_declaration() {
     if (match(1, TOKEN_VAR)) {
         return parse_variable_declaration();
     }
+    if (match(1, TOKEN_FUNC)) {
+        return parse_function_declaration();
+    }
     return parse_statement();
 }
 
@@ -278,6 +292,41 @@ static ASTNode* parse_variable_declaration() {
 
     consume_expected(TOKEN_SEMICOLON, "expected ';' after variable declaration");
     return make_node_var_decl(name, initializer);
+}
+
+static ASTNode* parse_function_declaration() {
+    // function name
+    consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
+    int length = previous()->length;
+    String* name = string_new(length);
+    memcpy(name->data, previous()->value, length);
+
+    // function parameters
+    consume_expected(TOKEN_LEFT_PAREN, "expected '(' after function name");
+    String** params = calloc(1, sizeof(String*));
+    int param_count = 0;
+    int param_capacity = 0;
+    if (parser.current->type != TOKEN_RIGHT_PAREN) {
+        do {
+            if (param_capacity < param_count + 1) {
+                param_capacity = GROW_CAPACITY(param_capacity);
+                params = GROW_ARRAY(String*, params, param_capacity);
+            }
+            consume_expected(TOKEN_IDENTIFIER, "expected parameter name");
+            Token* prev = previous();
+            String* param = string_new(prev->length);
+            memcpy(param->data, prev->value, prev->length);
+            params[param_count++] = param;
+        } while (match(1, TOKEN_COMMA));
+    }
+    consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after function parameters");
+
+    // function body
+    consume_expected(TOKEN_LEFT_BRACE, "expected function body");
+    ASTNode* body = parse_block();
+    consume_expected(TOKEN_RIGHT_BRACE, "expected '}' after function body");
+
+    return make_node_func_decl(name, params, param_count, body);
 }
 
 static ASTNode* parse_statement() {
@@ -610,6 +659,15 @@ void parser_free_ast(ASTNode* root) {
                 parser_free_ast(block->statements[i]);
             }
             free(block->statements);
+        } break;
+        case AST_NODE_FUNC_DECL: {
+            ASTNodeFuncDecl* func_decl = (ASTNodeFuncDecl*)root;
+            free(func_decl->name);
+            for (int i = 0; i < func_decl->param_count; ++i) {
+                free(func_decl->params[i]);
+            }
+            free(func_decl->params);
+            parser_free_ast(func_decl->body);
         } break;
         case AST_NODE_VAR_DECL: {
             ASTNodeVarDecl* var_decl = (ASTNodeVarDecl*)root;

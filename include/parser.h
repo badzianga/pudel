@@ -5,6 +5,7 @@
 typedef enum {
     AST_NODE_PROGRAM,
     AST_NODE_BLOCK,
+    AST_NODE_FUNC_DECL,
     AST_NODE_VAR_DECL,
     AST_NODE_EXPR_STMT,
     AST_NODE_IF_STMT,
@@ -33,6 +34,15 @@ typedef struct {
     int count;
     int capacity;
 } ASTNodeBlock;
+
+typedef struct {
+    ASTNode base;
+
+    String* name;
+    String** params;
+    int param_count;
+    ASTNode* body;
+} ASTNodeFuncDecl;
 
 typedef struct {
     ASTNode base;
