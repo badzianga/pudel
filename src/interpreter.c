@@ -10,6 +10,7 @@
 #include "parser.h"
 #include "value.h"
 
+static Environment* global_scope = NULL;
 static Environment* env = NULL;
 
 static bool is_truthy(Value value) {
@@ -142,7 +143,7 @@ static Value length_native(int argc, Value* argv) {
     return NUMBER_VALUE(list.list->length);
 }
 
-static void add_natives(Environment* global_scope) {
+static void add_natives() {
     env_define(global_scope, string_from("clock"), NATIVE_VALUE(clock_native));
     env_define(global_scope, string_from("print"), NATIVE_VALUE(print_native));
     env_define(global_scope, string_from("input"), NATIVE_VALUE(input_native));
@@ -186,6 +187,17 @@ static Value evaluate(ASTNode* root) {
             }
             env_free(env);
             env = previous;
+        } break;
+        case AST_NODE_FUNC_DECL: {
+            ASTNodeFuncDecl* func_decl = (ASTNodeFuncDecl*)root;
+            Function* function = malloc(sizeof(Function));
+            // TODO: name might not be needed in function value
+            function->name = func_decl->name;
+            function->params = func_decl->params;
+            function->param_count = func_decl->param_count;
+            function->body = func_decl->body;
+
+            env_define(global_scope, function->name, FUNCTION_VALUE(function));
         } break;
         case AST_NODE_VAR_DECL: {
             ASTNodeVarDecl* var_decl = (ASTNodeVarDecl*)root;
@@ -404,7 +416,8 @@ static Value evaluate(ASTNode* root) {
 
 Value interpreter_interpret(ASTNode* root) {
     env = env_new();
-    add_natives(env);
+    global_scope = env;
+    add_natives();
 
     Value value = evaluate(root);
     env_free(env);
