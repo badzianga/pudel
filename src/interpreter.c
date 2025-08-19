@@ -177,7 +177,12 @@ static Value* evaluate_subscription(ASTNodeSubscription* node) {
 
 static Value evaluate(ASTNode* root) {
     switch (root->type) {
-        case AST_NODE_PROGRAM:
+        case AST_NODE_PROGRAM: {
+            ASTNodeBlock* block = (ASTNodeBlock*)root;
+            for (int i = 0; i < block->count; ++i) {
+                evaluate(block->statements[i]);
+            }
+        } break;
         case AST_NODE_BLOCK: {
             ASTNodeBlock* block = (ASTNodeBlock*)root;
             Environment* previous = env;
