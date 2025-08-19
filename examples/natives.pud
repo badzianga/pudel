@@ -1,4 +1,4 @@
-// This program shows some native functions
+// This program shows some native functions.
 var start = clock();
 
 var fib1 = 0;
@@ -11,7 +11,12 @@ while (fib1 < 1000) {
     fib2 = temp + fib1;
 }
 
-print(clock() - start);
+print("Took: ", clock() - start);
 
 var x = input("Input text: ");
 print("Got: ", x);
+
+print("Type of x: ", typeof(x));
+
+x = number(x);
+print("Type of x after conversion: ", typeof(x));
