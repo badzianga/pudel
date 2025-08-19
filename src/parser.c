@@ -683,12 +683,16 @@ void parser_free_ast(ASTNode* root) {
             ASTNodeIfStmt* if_stmt = (ASTNodeIfStmt*)root;
             parser_free_ast(if_stmt->condition);
             parser_free_ast(if_stmt->then_branch);
-            parser_free_ast(if_stmt->else_branch);
+            if (if_stmt->else_branch != NULL) {
+                parser_free_ast(if_stmt->else_branch);
+            }
         } break;
         case AST_NODE_WHILE_STMT: {
             ASTNodeWhileStmt* while_stmt = (ASTNodeWhileStmt*)root;
             parser_free_ast(while_stmt->condition);
-            parser_free_ast(while_stmt->body);
+            if (while_stmt->body != NULL) {
+                parser_free_ast(while_stmt->body);
+            }
         } break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
