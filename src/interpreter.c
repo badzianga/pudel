@@ -378,17 +378,32 @@ static Value evaluate(ASTNode* root) {
             ASTNodeCall* call = (ASTNodeCall*)root;
             Value callee = evaluate(call->callee);
 
-            if (callee.type != VALUE_NATIVE) {
+            if (callee.type == VALUE_NATIVE) {
+                Value* args = malloc(sizeof(Value) * call->count);
+                for (int i = 0; i < call->count; ++i) {
+                    args[i] = evaluate(call->arguments[i]);
+                }
+                Value result = callee.native(call->count, args);
+                free(args);
+                return result;
+            }
+            if (callee.type == VALUE_FUNCTION) {
+                if (callee.function->param_count != call->count) {
+                    runtime_error("expected %d arguments, but got %d", callee.function->param_count, call->count);
+                }
+                Environment* tmp = env;
+                Environment* func_scope = env_new_with_enclosing(global_scope);
+                for (int i = 0; i < call->count; ++i) {
+                    env_define(func_scope, callee.function->params[i], evaluate(call->arguments[i]));
+                }
+                env = func_scope;
+                evaluate(callee.function->body);
+                env = tmp;
+                free(func_scope);
+            }
+            else {
                 runtime_error("attempt to call a non-function value");
             }
-
-            Value* args = malloc(sizeof(Value) * call->count);
-            for (int i = 0; i < call->count; ++i) {
-                args[i] = evaluate(call->arguments[i]);
-            }
-            Value result = callee.native(call->count, args);
-            free(args);
-            return result;
         } break;
         case AST_NODE_SUBSCRIPTION: {
             ASTNodeSubscription* subscription = (ASTNodeSubscription*)root;
@@ -402,7 +417,7 @@ static Value evaluate(ASTNode* root) {
             ASTNodeVar* var = (ASTNodeVar*)root;
             Value* variable = env_get_ref(env, var->name);
             if (variable == NULL) {
-                runtime_error("undeclared identifier '%s'\n", var->name->data);
+                runtime_error("undeclared identifier '%s'", var->name->data);
             }
             return *variable;
         }
@@ -420,8 +435,8 @@ static Value evaluate(ASTNode* root) {
 }
 
 Value interpreter_interpret(ASTNode* root) {
-    env = env_new();
-    global_scope = env;
+    global_scope = env_new();
+    env = global_scope;
     add_natives();
 
     Value value = evaluate(root);
