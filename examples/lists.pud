@@ -1,0 +1,26 @@
+// This program shows some operations on the lists.
+
+var list = [10, 20, 10 + 20];
+print(list);
+
+list[0] = 1;
+print(list);
+
+append(list, 40);
+print(list);
+
+var arr2d = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
+
+var sum = 0;
+for (var y = 0; y < length(arr2d); y += 1) {
+    for (var x = 0; x < length(arr2d[y]); x += 1) {
+        sum += arr2d[y][x];
+    }
+}
+
+print(arr2d);
+print("Sum: ", sum);
