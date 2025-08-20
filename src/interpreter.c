@@ -1,3 +1,4 @@
+#include <setjmp.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +13,20 @@
 
 static Environment* global_scope = NULL;
 static Environment* env = NULL;
+
+typedef enum {
+    FLOW_NORMAL,
+    FLOW_RETURN,
+} FlowSignal;
+
+typedef struct ControlContext {
+    jmp_buf buf;
+    FlowSignal signal;
+    struct ControlContext* parent;
+} ControlContext;
+
+static ControlContext* current_context = NULL;
+static Value ctx_return_value = NULL_VALUE();
 
 static bool is_truthy(Value value) {
     switch (value.type) {
@@ -235,6 +250,13 @@ static Value evaluate(ASTNode* root) {
                 }
             }
         } break;
+        case AST_NODE_RETURN_STMT: {
+            ASTNodeExprStmt* return_stmt = (ASTNodeExprStmt*)root;
+            Value return_value = (return_stmt->expression != NULL) ? evaluate(return_stmt->expression) : NULL_VALUE();
+            ctx_return_value = return_value;
+            current_context->signal = FLOW_RETURN;
+            longjmp(current_context->buf, 1);
+        } break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
             Value* var = NULL;
@@ -397,9 +419,27 @@ static Value evaluate(ASTNode* root) {
                     env_define(func_scope, callee.function->params[i], evaluate(call->arguments[i]));
                 }
                 env = func_scope;
-                evaluate(callee.function->body);
+
+                ControlContext ctx = { 0 };
+                ctx.parent = current_context;
+                current_context = &ctx;
+                Value return_value = NULL_VALUE();
+
+                if (setjmp(ctx.buf) == 0) {
+                    evaluate(callee.function->body);
+                }
+                else {
+                    FlowSignal sig = ctx.signal;
+                    if (sig == FLOW_RETURN) {
+                        return_value = ctx_return_value;
+                    }
+                }
+
+                current_context = ctx.parent;
                 env = tmp;
                 free(func_scope);
+                return return_value;
+                
             }
             else {
                 runtime_error("attempt to call a non-function value");
