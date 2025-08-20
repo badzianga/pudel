@@ -148,6 +148,13 @@ static ASTNode* make_node_while_stmt(ASTNode* condition, ASTNode* body) {
     return (ASTNode*)node;
 }
 
+static ASTNode* make_node_return_stmt(ASTNode* expression) {
+    ASTNodeExprStmt* node = malloc(sizeof(ASTNodeExprStmt));
+    node->base.type = AST_NODE_RETURN_STMT;
+    node->expression = expression;
+    return (ASTNode*)node;
+}
+
 static ASTNode* make_node_assignment(ASTNode* target, TokenType op, ASTNode* value) {
     ASTNodeAssignment* node = malloc(sizeof(ASTNodeAssignment));
     node->base.type = AST_NODE_ASSIGNMENT;
@@ -236,6 +243,7 @@ static ASTNode* parse_expression_statement();
 static ASTNode* parse_if_statement();
 static ASTNode* parse_while_statement();
 static ASTNode* parse_for_statement();
+static ASTNode* parse_return_statement();
 static ASTNode* parse_block();
 
 static ASTNode* parse_expression();
@@ -333,6 +341,7 @@ static ASTNode* parse_statement() {
     if (match(1, TOKEN_IF)) return parse_if_statement();
     if (match(1, TOKEN_WHILE)) return parse_while_statement();
     if (match(1, TOKEN_FOR)) return parse_for_statement();
+    if (match(1, TOKEN_RETURN)) return parse_return_statement();
 
     if (match(1, TOKEN_LEFT_BRACE)) {
         ASTNode* block = parse_block();
@@ -417,6 +426,15 @@ static ASTNode* parse_for_statement() {
     }
 
     return body;
+}
+
+static ASTNode* parse_return_statement() {
+    ASTNode* expression = NULL;
+    if (parser.current->type != TOKEN_SEMICOLON) {
+        expression = parse_expression();
+    }
+    consume_expected(TOKEN_SEMICOLON, "expected ';' after 'return' statement");
+    return make_node_return_stmt(expression);
 }
 
 static ASTNode* parse_block() {
@@ -676,7 +694,7 @@ void parser_free_ast(ASTNode* root) {
         } break;
         case AST_NODE_EXPR_STMT: {
             ASTNodeExprStmt* expr_stmt = (ASTNodeExprStmt*)root;
-            free(expr_stmt->expression);
+            parser_free_ast(expr_stmt->expression);
         } break;
         case AST_NODE_TERNARY:
         case AST_NODE_IF_STMT: {
@@ -692,6 +710,12 @@ void parser_free_ast(ASTNode* root) {
             parser_free_ast(while_stmt->condition);
             if (while_stmt->body != NULL) {
                 parser_free_ast(while_stmt->body);
+            }
+        } break;
+        case AST_NODE_RETURN_STMT: {
+            ASTNodeExprStmt* return_stmt = (ASTNodeExprStmt*)root;
+            if (return_stmt->expression != NULL) {
+                parser_free_ast(return_stmt->expression);
             }
         } break;
         case AST_NODE_ASSIGNMENT: {

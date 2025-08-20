@@ -88,6 +88,17 @@ void debug_print_ast(ASTNode* root, int indent) {
                 debug_print_ast(while_stmt->body, indent + 1);
             }
         } break;
+        case AST_NODE_RETURN_STMT: {
+            ASTNodeExprStmt* return_stmt = (ASTNodeExprStmt*)root;
+            printf("Return:");
+            if (return_stmt->expression == NULL) {
+                printf(" null\n");
+            }
+            else {
+                putchar('\n');
+                debug_print_ast(return_stmt->expression, indent + 1);
+            }
+        } break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
             printf("Assignment: %s\n", token_as_cstr(assignment->op));

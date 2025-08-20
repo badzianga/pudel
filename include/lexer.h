@@ -43,6 +43,7 @@ typedef enum TokenType {
     TOKEN_IF,              // if
     TOKEN_NULL,            // null
     TOKEN_OR,              // or
+    TOKEN_RETURN,          // return
     TOKEN_TRUE,            // true
     TOKEN_VAR,             // var
     TOKEN_WHILE,           // while
