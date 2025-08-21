@@ -147,7 +147,14 @@ void debug_print_ast(ASTNode* root, int indent) {
         case AST_NODE_LITERAL: {
             ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
             fputs("Literal: ", stdout);
-            print_value(literal->value);
+            if (literal->value.type == VALUE_STRING) {
+                putchar('"');
+                print_value(literal->value);
+                putchar('"');
+            }
+            else {
+                print_value(literal->value);
+            }
             fputs("\n", stdout);
         } break;
         case AST_NODE_VAR: {
