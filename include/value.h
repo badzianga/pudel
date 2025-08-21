@@ -1,9 +1,11 @@
 #pragma once
+#include <stdint.h>
 #include <stdbool.h>
 
 typedef enum {
     VALUE_NULL,
-    VALUE_NUMBER,
+    VALUE_INT,
+    VALUE_FLOAT,
     VALUE_BOOL,
     VALUE_STRING,
     VALUE_LIST,
@@ -38,7 +40,8 @@ typedef struct {
 struct Value {
     ValueType type;
     union {
-        double number;
+        int64_t integer;
+        double floating;
         bool boolean;
         String* string;
         List* list;
@@ -47,16 +50,18 @@ struct Value {
     };
 };
 
-#define IS_NULL(value)      ((value).type == VALUE_NULL)
-#define IS_NUMBER(value)    ((value).type == VALUE_NUMBER)
-#define IS_BOOL(value)      ((value).type == VALUE_BOOL)
-#define IS_STRING(value)    ((value).type == VALUE_STRING)
-#define IS_LIST(value)      ((value).type == VALUE_LIST)
-#define IS_NATIVE(value)    ((value).type == VALUE_NATIVE)
-#define IS_FUNCTION(value)  ((value).type == VALUE_FUNCTION)
+#define IS_NULL(value)        ((value).type == VALUE_NULL)
+#define IS_INT(value)         ((value).type == VALUE_INT)
+#define IS_FLOAT(value)       ((value).type == VALUE_FLOAT)
+#define IS_BOOL(value)        ((value).type == VALUE_BOOL)
+#define IS_STRING(value)      ((value).type == VALUE_STRING)
+#define IS_LIST(value)        ((value).type == VALUE_LIST)
+#define IS_NATIVE(value)      ((value).type == VALUE_NATIVE)
+#define IS_FUNCTION(value)    ((value).type == VALUE_FUNCTION)
 
-#define NULL_VALUE()          ((Value){ .type = VALUE_NULL,     .number = 0 })
-#define NUMBER_VALUE(value)   ((Value){ .type = VALUE_NUMBER,   .number = value })
+#define NULL_VALUE()          ((Value){ .type = VALUE_NULL,     .integer = 0 })
+#define INT_VALUE(value)      ((Value){ .type = VALUE_INT,      .integer = value })
+#define FLOAT_VALUE(value)    ((Value){ .type = VALUE_FLOAT,    .floating = value })
 #define BOOL_VALUE(value)     ((Value){ .type = VALUE_BOOL,     .boolean = value })
 #define STRING_VALUE(value)   ((Value){ .type = VALUE_STRING,   .string = value })
 #define LIST_VALUE(value)     ((Value){ .type = VALUE_LIST,     .list = value })

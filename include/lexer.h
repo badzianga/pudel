@@ -32,7 +32,8 @@ typedef enum TokenType {
     TOKEN_LESS_EQUAL,      // <=
 
     TOKEN_IDENTIFIER,      // x
-    TOKEN_NUMBER,          // 0
+    TOKEN_INT,             // 0
+    TOKEN_FLOAT,           // 0.0
     TOKEN_STRING,          // ""
 
     TOKEN_AND,             // and

@@ -32,7 +32,8 @@ static Value ctx_return_value = NULL_VALUE();
 static bool is_truthy(Value value) {
     switch (value.type) {
         case VALUE_NULL:   return false;
-        case VALUE_NUMBER: return value.number != 0.0;
+        case VALUE_INT: return value.integer != 0;
+        case VALUE_FLOAT: return value.floating != 0.0;
         case VALUE_BOOL:   return value.boolean;
         case VALUE_STRING: return value.string->length != 0;
         case VALUE_LIST:   return value.list->length != 0;
@@ -53,20 +54,20 @@ static void runtime_error(const char* format, ...) {
     exit(1);
 }
 
-static void assert_number_operand(Value a) {
-    if (IS_NUMBER(a)) return;
-    runtime_error("operand must be a number");
+static void assert_int_operand(Value a) {
+    if (IS_INT(a)) return;
+    runtime_error("operand must be a integers");
 }
 
-static void assert_number_operands(Value a, Value b) {
-    if (IS_NUMBER(a) && IS_NUMBER(b)) return;
-    runtime_error("operands must be numbers");
+static void assert_int_operands(Value a, Value b) {
+    if (IS_INT(a) && IS_INT(b)) return;
+    runtime_error("operands must be integers");
 }
 
 static Value clock_native(int argc, Value* argv) {
     (void)argv;
     if (argc != 0) runtime_error("expected 0 arguments but got %d", argc);
-    return NUMBER_VALUE((double)clock() / CLOCKS_PER_SEC);
+    return FLOAT_VALUE((double)clock() / CLOCKS_PER_SEC);
 }
 
 static Value print_native(int argc, Value* argv) {
@@ -94,15 +95,30 @@ static Value typeof_native(int argc, Value* argv) {
     return STRING_VALUE(string_from(value_type_as_cstr(argv[0].type)));
 }
 
-static Value number_native(int argc, Value* argv) {
+static Value int_native(int argc, Value* argv) {
     if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
     Value arg = argv[0];
     switch (arg.type) {
-        case VALUE_NULL:   return NUMBER_VALUE(0.0);
-        case VALUE_NUMBER: return arg;
-        case VALUE_BOOL:   return NUMBER_VALUE(arg.boolean ? 1.0 : 0.0);
-        case VALUE_STRING: return NUMBER_VALUE(strtod(arg.string->data, NULL));
-        default: runtime_error("cannot convert from %s to number", value_type_as_cstr(arg.type));
+        case VALUE_NULL:   return INT_VALUE(0);
+        case VALUE_INT:    return arg;
+        case VALUE_FLOAT:  return INT_VALUE((int64_t)arg.floating);
+        case VALUE_BOOL:   return INT_VALUE(arg.boolean ? 1 : 0);
+        case VALUE_STRING: return INT_VALUE(strtoll(arg.string->data, NULL, 10));
+        default: runtime_error("cannot convert from %s to int", value_type_as_cstr(arg.type));
+    }
+    return NULL_VALUE();
+}
+
+static Value float_native(int argc, Value* argv) {
+    if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
+    Value arg = argv[0];
+    switch (arg.type) {
+        case VALUE_NULL:   return FLOAT_VALUE(0.0);
+        case VALUE_INT:    return FLOAT_VALUE((double)arg.integer);
+        case VALUE_FLOAT:  return arg;
+        case VALUE_BOOL:   return FLOAT_VALUE(arg.boolean ? 1.0 : 0.0);
+        case VALUE_STRING: return FLOAT_VALUE(strtod(arg.string->data, NULL));
+        default: runtime_error("cannot convert from %s to float", value_type_as_cstr(arg.type));
     }
     return NULL_VALUE();
 }
@@ -112,7 +128,8 @@ static Value bool_native(int argc, Value* argv) {
     Value arg = argv[0];
     switch (arg.type) {
         case VALUE_NULL:     return BOOL_VALUE(false);
-        case VALUE_NUMBER:   return BOOL_VALUE(arg.number != 0.0);
+        case VALUE_INT:      return BOOL_VALUE(arg.integer != 0);
+        case VALUE_FLOAT:    return FLOAT_VALUE(arg.floating != 0.0);
         case VALUE_BOOL:     return arg;
         case VALUE_STRING:   return BOOL_VALUE(arg.string->length != 0);
         case VALUE_NATIVE:   return BOOL_VALUE(true);
@@ -127,9 +144,14 @@ static Value string_native(int argc, Value* argv) {
     Value arg = argv[0];
     switch (arg.type) {
         case VALUE_NULL:   return STRING_VALUE(string_from("null"));
-        case VALUE_NUMBER: {
+        case VALUE_INT: {
             char buffer[64];
-            snprintf(buffer, sizeof(buffer), "%lf", arg.number);
+            snprintf(buffer, sizeof(buffer), "%ld", arg.integer);
+            return STRING_VALUE(string_from(buffer));
+        }
+        case VALUE_FLOAT: {
+            char buffer[64];
+            snprintf(buffer, sizeof(buffer), "%g", arg.floating);
             return STRING_VALUE(string_from(buffer));
         }
         case VALUE_BOOL:   return STRING_VALUE(string_from(arg.boolean ? "true" : "false"));
@@ -158,7 +180,7 @@ static Value append_native(int argc, Value* argv) {
 static Value length_native(int argc, Value* argv) {
     if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
     Value list = argv[0];
-    return NUMBER_VALUE(list.list->length);
+    return INT_VALUE(list.list->length);
 }
 
 static void add_natives() {
@@ -167,7 +189,8 @@ static void add_natives() {
     env_define(global_scope, string_from("input"), NATIVE_VALUE(input_native));
     env_define(global_scope, string_from("typeof"), NATIVE_VALUE(typeof_native));
 
-    env_define(global_scope, string_from("number"), NATIVE_VALUE(number_native));
+    env_define(global_scope, string_from("int"), NATIVE_VALUE(int_native));
+    env_define(global_scope, string_from("float"), NATIVE_VALUE(float_native));
     env_define(global_scope, string_from("bool"), NATIVE_VALUE(bool_native));
     env_define(global_scope, string_from("string"), NATIVE_VALUE(string_native));
 
@@ -183,10 +206,10 @@ static Value* evaluate_subscription(ASTNodeSubscription* node) {
         runtime_error("object is not subscriptable");
     }
     Value index = evaluate(node->index);
-    if (!IS_NUMBER(index)) {
-        runtime_error("list index must be a number");
+    if (!IS_INT(index)) {
+        runtime_error("list index must be an integer");
     }
-    int idx = (int)index.number;
+    int idx = (int)index.integer;
     if (idx < 0 || idx >= list.list->length) {
         runtime_error("index out of range");
     }
@@ -279,8 +302,8 @@ static Value evaluate(ASTNode* root) {
             Value value = evaluate(assignment->value);
             switch(assignment->op) {
                 case TOKEN_PLUS_EQUAL: {
-                    if (IS_NUMBER(*var) && IS_NUMBER(value)) {
-                        var->number += value.number;
+                    if (IS_INT(*var) && IS_INT(value)) {
+                        var->integer += value.integer;
                     }
                     else if (IS_STRING(*var) && IS_STRING(value)) {
                         var->string = string_concat(var->string, value.string);
@@ -290,17 +313,17 @@ static Value evaluate(ASTNode* root) {
                     }
                 } break;
                 case TOKEN_MINUS_EQUAL: {
-                    assert_number_operands(*var, value);
-                    var->number -= value.number;
+                    assert_int_operands(*var, value);
+                    var->integer -= value.integer;
                 } break;
                 case TOKEN_ASTERISK_EQUAL: {
-                    assert_number_operands(*var, value);
-                    var->number *= value.number;
+                    assert_int_operands(*var, value);
+                    var->integer *= value.integer;
                 } break;
                 case TOKEN_SLASH_EQUAL: {
-                    assert_number_operands(*var, value);
-                    if (value.number == 0.0) runtime_error("cannot divide by zero");
-                    var->number /= value.number;
+                    assert_int_operands(*var, value);
+                    if (value.integer == 0) runtime_error("cannot divide by zero");
+                    var->integer /= value.integer;
                 } break;
                 case TOKEN_EQUAL: {
                     *var = value;
@@ -337,8 +360,8 @@ static Value evaluate(ASTNode* root) {
 
             switch (binary->op) {
                 case TOKEN_PLUS: {
-                    if (IS_NUMBER(left) && IS_NUMBER(right)) {
-                        return NUMBER_VALUE(left.number + right.number);
+                    if (IS_INT(left) && IS_INT(right)) {
+                        return INT_VALUE(left.integer + right.integer);
                     }
                     else if (IS_STRING(left) && IS_STRING(right)) {
                         return STRING_VALUE(string_concat(left.string, right.string));
@@ -346,41 +369,41 @@ static Value evaluate(ASTNode* root) {
                     else {
                         runtime_error("invalid operands for '+' operation");
                     }
-                    assert_number_operands(left, right);
-                    return NUMBER_VALUE(left.number + right.number);
+                    assert_int_operands(left, right);
+                    return INT_VALUE(left.integer + right.integer);
                 }
                 case TOKEN_MINUS: {
-                    assert_number_operands(left, right);
-                    return NUMBER_VALUE(left.number - right.number);
+                    assert_int_operands(left, right);
+                    return INT_VALUE(left.integer - right.integer);
                 }
                 case TOKEN_ASTERISK: {
-                    assert_number_operands(left, right);
-                    return NUMBER_VALUE(left.number * right.number);
+                    assert_int_operands(left, right);
+                    return INT_VALUE(left.integer * right.integer);
                 }
                 case TOKEN_SLASH: {
-                    assert_number_operands(left, right);
-                    if (right.number == 0.0) runtime_error("cannot divide by zero");
-                    return NUMBER_VALUE(left.number / right.number);
+                    assert_int_operands(left, right);
+                    if (right.integer == 0) runtime_error("cannot divide by zero");
+                    return INT_VALUE(left.integer / right.integer);
                 }
                 case TOKEN_EQUAL_EQUAL:
                     return BOOL_VALUE(values_equal(left, right));
                 case TOKEN_NOT_EQUAL:
                     return BOOL_VALUE(!values_equal(left, right));
                 case TOKEN_GREATER: {
-                    assert_number_operands(left, right);
-                    return BOOL_VALUE(left.number > right.number);
+                    assert_int_operands(left, right);
+                    return BOOL_VALUE(left.integer > right.integer);
                 }
                 case TOKEN_GREATER_EQUAL: {
-                    assert_number_operands(left, right);
-                    return BOOL_VALUE(left.number >= right.number);
+                    assert_int_operands(left, right);
+                    return BOOL_VALUE(left.integer >= right.integer);
                 }
                 case TOKEN_LESS: {
-                    assert_number_operands(left, right);
-                    return BOOL_VALUE(left.number < right.number);
+                    assert_int_operands(left, right);
+                    return BOOL_VALUE(left.integer < right.integer);
                 }
                 case TOKEN_LESS_EQUAL: {
-                    assert_number_operands(left, right);
-                    return BOOL_VALUE(left.number <= right.number);
+                    assert_int_operands(left, right);
+                    return BOOL_VALUE(left.integer <= right.integer);
                 }
                 default: break;
             }
@@ -391,8 +414,8 @@ static Value evaluate(ASTNode* root) {
 
             switch (unary->op) {
                 case TOKEN_MINUS: {
-                    assert_number_operand(value);
-                    value.number = -value.number;
+                    assert_int_operand(value);
+                    value.integer = -value.integer;
                     return value;
                 }
                 case TOKEN_NOT: {

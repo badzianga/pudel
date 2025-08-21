@@ -105,8 +105,10 @@ static Token read_number() {
 
     if (advance_if('.')) {
         while (isdigit(peek())) advance();
+
+        return make_token(TOKEN_FLOAT);
     }
-    return make_token(TOKEN_NUMBER);
+    return make_token(TOKEN_INT);
 }
 
 static Token read_string() {
@@ -282,7 +284,8 @@ const char* token_as_cstr(TokenType type) {
         "<=",
 
         "IDENTIFIER",
-        "NUMBER",
+        "INT",
+        "FLOAT",
         "STRING",
 
         "and",

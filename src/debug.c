@@ -10,7 +10,7 @@ void debug_print_token_array(TokenArray* token_array) {
     for (const Token* token = token_array->tokens; token != end; ++token) {
         TokenType type = token->type;
 
-        if (type == TOKEN_NUMBER || type == TOKEN_STRING || type == TOKEN_IDENTIFIER) {
+        if (type == TOKEN_INT || type == TOKEN_FLOAT || type == TOKEN_STRING || type == TOKEN_IDENTIFIER) {
             printf(
                 "Line: %d,\ttoken: %s,\tvalue: %.*s\n",
                 token->line,

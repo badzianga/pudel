@@ -599,9 +599,13 @@ static ASTNode* parse_primary() {
         memcpy(name->data, previous()->value, length);
         return make_node_var(name);
     }
-    if (match(1, TOKEN_NUMBER)) {
+    if (match(1, TOKEN_INT)) {
+        int64_t value = strtoll(previous()->value, NULL, 10);
+        return make_node_literal(INT_VALUE(value));
+    }
+    if (match(1, TOKEN_FLOAT)) {
         double value = strtod(previous()->value, NULL);
-        return make_node_literal(NUMBER_VALUE(value));
+        return make_node_literal(FLOAT_VALUE(value));
     }
     if (match(1, TOKEN_STRING)) {
         int length = previous()->length - 2;

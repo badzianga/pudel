@@ -6,7 +6,8 @@
 const char* value_type_as_cstr(ValueType type) {
     switch (type) {
         case VALUE_NULL:     return "null";
-        case VALUE_NUMBER:   return "number";
+        case VALUE_INT:      return "int";
+        case VALUE_FLOAT:    return "float";
         case VALUE_BOOL:     return "bool";
         case VALUE_STRING:   return "string";
         case VALUE_LIST:     return "list";
@@ -20,12 +21,12 @@ bool values_equal(Value a, Value b) {
     if (a.type != b.type)    return false;
     switch (a.type) {
         case VALUE_NULL:     return true;
-        case VALUE_NUMBER:   return a.number == b.number;
+        case VALUE_INT:      return a.integer == b.integer;
         case VALUE_BOOL:     return a.boolean == b.boolean;
         case VALUE_STRING:   return strings_equal(a.string, b.string);
         case VALUE_LIST:     return lists_equal(a.list, b.list);
         case VALUE_NATIVE:   return a.native == b.native;
-        case VALUE_FUNCTION: return strings_equal(a.function->name, b.function->name) && a.function->param_count == b.function->param_count; 
+        case VALUE_FUNCTION: return strings_equal(a.function->name, b.function->name);
         default:             return false;
     }
 }
@@ -35,8 +36,11 @@ void print_value(Value value) {
         case VALUE_NULL: {
             fputs("null", stdout);
         } break;
-        case VALUE_NUMBER: {
-            printf("%g", value.number);
+        case VALUE_INT: {
+            printf("%ld", value.integer);
+        } break;
+        case VALUE_FLOAT: {
+            printf("%g", value.floating);
         } break;
         case VALUE_BOOL: {
             printf("%s", value.boolean ? "true" : "false");
