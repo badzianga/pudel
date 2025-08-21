@@ -111,11 +111,12 @@ static Value bool_native(int argc, Value* argv) {
     if (argc != 1) runtime_error("expected 1 argument but got %d", argc);
     Value arg = argv[0];
     switch (arg.type) {
-        case VALUE_NULL:   return BOOL_VALUE(false);
-        case VALUE_NUMBER: return BOOL_VALUE(arg.number != 0.0);
-        case VALUE_BOOL:   return arg;
-        case VALUE_STRING: return BOOL_VALUE(arg.string->length != 0);
-        case VALUE_NATIVE: return BOOL_VALUE(true);
+        case VALUE_NULL:     return BOOL_VALUE(false);
+        case VALUE_NUMBER:   return BOOL_VALUE(arg.number != 0.0);
+        case VALUE_BOOL:     return arg;
+        case VALUE_STRING:   return BOOL_VALUE(arg.string->length != 0);
+        case VALUE_NATIVE:   return BOOL_VALUE(true);
+        case VALUE_FUNCTION: return BOOL_VALUE(true);
         default: runtime_error("cannot convert from %s to bool", value_type_as_cstr(arg.type));
     }
     return NULL_VALUE();
@@ -134,6 +135,7 @@ static Value string_native(int argc, Value* argv) {
         case VALUE_BOOL:   return STRING_VALUE(string_from(arg.boolean ? "true" : "false"));
         case VALUE_STRING: return arg;
         case VALUE_NATIVE: return STRING_VALUE(string_from("<native function>")); //TODO: also print name of function
+        case VALUE_FUNCTION: return STRING_VALUE(arg.function->name);
         default: runtime_error("cannot convert from %s to string", value_type_as_cstr(arg.type));
     }
     return NULL_VALUE();
