@@ -283,7 +283,7 @@ const char* token_as_cstr(TokenType type) {
         "<",
         "<=",
 
-        "IDENTIFIER",
+        "ID",
         "INT",
         "FLOAT",
         "STRING",
