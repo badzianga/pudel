@@ -1,0 +1,44 @@
+// This program shows some functions usage.
+var call_counter = 0;
+
+// basic function + global variable usage
+func print_sum(x, y) {
+    call_counter += 1;
+    print(x + y);
+}
+
+print_sum(2, 3);
+print("Call counter: ", call_counter);
+
+
+// recursive function without return
+func count(n) {
+    if (n > 1) count(n - 1);
+    print(n);
+}
+
+count(5);
+
+
+// basic functions with return
+func add(x, y) {
+    return x + y;
+}
+
+func square(x) {
+    return x * x;
+}
+
+print(add(1, 2));
+print(square(20));
+
+
+// recursive function with return
+func fib(n) {
+    if (n == 0 or n == 1) return n;
+    return fib(n - 1) + fib(n - 2);
+}
+
+for (var i = 0; i < 20; i += 1) {
+    print(fib(i));
+}
