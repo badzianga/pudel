@@ -13,6 +13,7 @@
 
 static Environment* global_scope = NULL;
 static Environment* env = NULL;
+static int function_depth = 0;
 
 typedef enum {
     FLOW_NORMAL,
@@ -252,6 +253,9 @@ static Value evaluate(ASTNode* root) {
         } break;
         case AST_NODE_RETURN_STMT: {
             ASTNodeExprStmt* return_stmt = (ASTNodeExprStmt*)root;
+
+            if (function_depth <= 0) runtime_error("return is only possible from functions");
+
             Value return_value = (return_stmt->expression != NULL) ? evaluate(return_stmt->expression) : NULL_VALUE();
             ctx_return_value = return_value;
             current_context->signal = FLOW_RETURN;
@@ -425,6 +429,8 @@ static Value evaluate(ASTNode* root) {
                 current_context = &ctx;
                 Value return_value = NULL_VALUE();
 
+                ++function_depth;
+
                 if (setjmp(ctx.buf) == 0) {
                     evaluate(callee.function->body);
                 }
@@ -434,6 +440,8 @@ static Value evaluate(ASTNode* root) {
                         return_value = ctx_return_value;
                     }
                 }
+
+                --function_depth;
 
                 current_context = ctx.parent;
                 env = tmp;
