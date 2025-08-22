@@ -54,16 +54,6 @@ static void runtime_error(const char* format, ...) {
     exit(1);
 }
 
-static void assert_int_operand(Value a) {
-    if (IS_INT(a)) return;
-    runtime_error("operand must be a integers");
-}
-
-static void assert_int_operands(Value a, Value b) {
-    if (IS_INT(a) && IS_INT(b)) return;
-    runtime_error("operands must be integers");
-}
-
 static Value clock_native(int argc, Value* argv) {
     (void)argv;
     if (argc != 0) runtime_error("expected 0 arguments but got %d", argc);
@@ -196,6 +186,62 @@ static void add_natives() {
 
     env_define(global_scope, string_from("append"), NATIVE_VALUE(append_native));
     env_define(global_scope, string_from("length"), NATIVE_VALUE(length_native));
+}
+
+static Value promote(Value value, ValueType target_type) {
+    Value result = { .type = target_type };
+    switch (target_type) {
+        case VALUE_INT: {
+            switch (value.type) {
+                case VALUE_INT:   return value;
+                case VALUE_FLOAT: result.integer = (int64_t)value.integer; break;
+                case VALUE_BOOL:  result.integer = value.boolean ? 1 : 0; break;
+                default: {
+                    runtime_error(
+                        "cannot promote value type from %s to %s",
+                        value_type_as_cstr(value.type),
+                        value_type_as_cstr(target_type)
+                    );
+                } break;
+            }
+        } break;
+        case VALUE_FLOAT: {
+            switch (value.type) {
+                case VALUE_INT:   result.floating = (double)value.integer; break;
+                case VALUE_FLOAT: return value;
+                case VALUE_BOOL:  result.floating = value.boolean ? 1.0 : 0.0; break;
+                default: {
+                    runtime_error(
+                        "cannot promote value type from %s to %s",
+                        value_type_as_cstr(value.type),
+                        value_type_as_cstr(target_type)
+                    );
+                } break;
+            }
+        } break;
+        case VALUE_BOOL: {
+            switch (value.type) {
+                case VALUE_INT:   result.boolean = value.integer != 0; break;
+                case VALUE_FLOAT: result.boolean = value.floating != 0.0; break;
+                case VALUE_BOOL:  return value;
+                default: {
+                    runtime_error(
+                        "cannot promote value type from %s to %s",
+                        value_type_as_cstr(value.type),
+                        value_type_as_cstr(target_type)
+                    );
+                } break;
+            }
+        } break;
+        default: {
+            runtime_error(
+                "cannot promote value type from %s to %s",
+                value_type_as_cstr(value.type),
+                value_type_as_cstr(target_type)
+            );
+        } break;
+    }
+    return result;
 }
 
 static Value evaluate(ASTNode* root);
@@ -358,52 +404,82 @@ static Value evaluate(ASTNode* root) {
             Value left = evaluate(binary->left);
             Value right = evaluate(binary->right);
 
+            // ugly hack for string concatenation
+            if (binary->op == TOKEN_PLUS && (left.type == VALUE_STRING || right.type == VALUE_STRING)) {
+                if (left.type == VALUE_STRING && right.type == VALUE_STRING) {
+                    return STRING_VALUE(string_concat(left.string, right.string));
+                }
+                runtime_error("string concatenation is only possible for two strings");
+            }
+
+            if (left.type < VALUE_INT || left.type > VALUE_BOOL || right.type < VALUE_INT || right.type > VALUE_BOOL) {
+                runtime_error(
+                    "cannot perform operation '%s' for '%s' and '%s'",
+                    token_as_cstr(binary->op),
+                    value_type_as_cstr(left.type),
+                    value_type_as_cstr(right.type)
+                );
+            }
+
+            ValueType result_type = VALUE_NULL;
+            if (left.type == VALUE_FLOAT || right.type == VALUE_FLOAT) result_type = VALUE_FLOAT;
+            else if (left.type == VALUE_INT || right.type == VALUE_INT) result_type = VALUE_INT;
+            result_type = VALUE_BOOL;
+
+            left = promote(left, result_type);
+            right = promote(right, result_type);
+
             switch (binary->op) {
                 case TOKEN_PLUS: {
-                    if (IS_INT(left) && IS_INT(right)) {
-                        return INT_VALUE(left.integer + right.integer);
-                    }
-                    else if (IS_STRING(left) && IS_STRING(right)) {
-                        return STRING_VALUE(string_concat(left.string, right.string));
-                    }
-                    else {
-                        runtime_error("invalid operands for '+' operation");
-                    }
-                    assert_int_operands(left, right);
-                    return INT_VALUE(left.integer + right.integer);
+                    if (result_type == VALUE_INT) return INT_VALUE(left.integer + right.integer);
+                    if (result_type == VALUE_FLOAT) return FLOAT_VALUE(left.floating + right.floating); 
+                    return INT_VALUE(left.boolean + right.boolean);
                 }
                 case TOKEN_MINUS: {
-                    assert_int_operands(left, right);
-                    return INT_VALUE(left.integer - right.integer);
+                    if (result_type == VALUE_INT) return INT_VALUE(left.integer - right.integer);
+                    if (result_type == VALUE_FLOAT) return FLOAT_VALUE(left.floating - right.floating); 
+                    return INT_VALUE(left.boolean - right.boolean);
                 }
                 case TOKEN_ASTERISK: {
-                    assert_int_operands(left, right);
-                    return INT_VALUE(left.integer * right.integer);
+                    if (result_type == VALUE_INT) return INT_VALUE(left.integer * right.integer);
+                    if (result_type == VALUE_FLOAT) return FLOAT_VALUE(left.floating * right.floating); 
+                    return INT_VALUE(left.boolean * right.boolean);
                 }
                 case TOKEN_SLASH: {
-                    assert_int_operands(left, right);
-                    if (right.integer == 0) runtime_error("cannot divide by zero");
-                    return INT_VALUE(left.integer / right.integer);
+                    if (result_type == VALUE_INT) {
+                        if (right.integer == 0) runtime_error("division by zero");
+                        return INT_VALUE(left.integer / right.integer);
+                    }
+                    if (result_type == VALUE_FLOAT) {
+                        if (right.floating == 0.0) runtime_error("division by zero");
+                        return FLOAT_VALUE(left.floating / right.floating);
+                    }
+                    if (right.boolean == false) runtime_error("division by zero");
+                    return INT_VALUE(left.boolean / right.boolean);
                 }
                 case TOKEN_EQUAL_EQUAL:
                     return BOOL_VALUE(values_equal(left, right));
                 case TOKEN_NOT_EQUAL:
                     return BOOL_VALUE(!values_equal(left, right));
                 case TOKEN_GREATER: {
-                    assert_int_operands(left, right);
-                    return BOOL_VALUE(left.integer > right.integer);
+                    if (result_type == VALUE_INT) return BOOL_VALUE(left.integer > right.integer);
+                    if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.floating > right.floating); 
+                    return BOOL_VALUE(left.boolean > right.boolean);
                 }
                 case TOKEN_GREATER_EQUAL: {
-                    assert_int_operands(left, right);
-                    return BOOL_VALUE(left.integer >= right.integer);
+                    if (result_type == VALUE_INT) return BOOL_VALUE(left.integer >= right.integer);
+                    if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.floating >= right.floating); 
+                    return BOOL_VALUE(left.boolean >= right.boolean);
                 }
                 case TOKEN_LESS: {
-                    assert_int_operands(left, right);
-                    return BOOL_VALUE(left.integer < right.integer);
+                    if (result_type == VALUE_INT) return BOOL_VALUE(left.integer < right.integer);
+                    if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.floating < right.floating); 
+                    return BOOL_VALUE(left.boolean < right.boolean);
                 }
                 case TOKEN_LESS_EQUAL: {
-                    assert_int_operands(left, right);
-                    return BOOL_VALUE(left.integer <= right.integer);
+                    if (result_type == VALUE_INT) return BOOL_VALUE(left.integer <= right.integer);
+                    if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.floating <= right.floating); 
+                    return BOOL_VALUE(left.boolean <= right.boolean);
                 }
                 default: break;
             }
