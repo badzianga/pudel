@@ -346,33 +346,58 @@ static Value evaluate(ASTNode* root) {
                 var = evaluate_subscription((ASTNodeSubscription*)assignment->target);
             }
             Value value = evaluate(assignment->value);
+
+            if (assignment->op == TOKEN_EQUAL) {
+                *var = value;
+                return *var;
+            }
+
+            if (assignment->op == TOKEN_PLUS_EQUAL && (var->type == VALUE_STRING || value.type == VALUE_STRING)) {
+                if (var->type == VALUE_STRING && value.type == VALUE_STRING) {
+                    var->string = string_concat(var->string, value.string);
+                    return *var;
+                }
+                runtime_error("string concatenation is only possible for two strings");
+            }
+
+            if (var->type < VALUE_INT || var->type > VALUE_BOOL || value.type < VALUE_INT || value.type > VALUE_BOOL) {
+                runtime_error(
+                    "cannot perform assignment operation '%s' for '%s' and '%s'",
+                    token_as_cstr(assignment->op),
+                    value_type_as_cstr(var->type),
+                    value_type_as_cstr(value.type)
+                );
+            }
+
+            ValueType result_type = VALUE_NULL;
+            if (var->type == VALUE_FLOAT || value.type == VALUE_FLOAT) result_type = VALUE_FLOAT;
+            else result_type = VALUE_INT;
+
+            *var = promote(*var, result_type);
+            value = promote(value, result_type);
+
             switch(assignment->op) {
                 case TOKEN_PLUS_EQUAL: {
-                    if (IS_INT(*var) && IS_INT(value)) {
-                        var->integer += value.integer;
-                    }
-                    else if (IS_STRING(*var) && IS_STRING(value)) {
-                        var->string = string_concat(var->string, value.string);
-                    }
-                    else {
-                        runtime_error("invalid operands for '+=' operation");
-                    }
+                    if (result_type == VALUE_INT) var->integer += value.integer;
+                    else var->floating += value.floating;
                 } break;
                 case TOKEN_MINUS_EQUAL: {
-                    assert_int_operands(*var, value);
-                    var->integer -= value.integer;
+                    if (result_type == VALUE_INT) var->integer -= value.integer;
+                    else var->floating -= value.floating;
                 } break;
                 case TOKEN_ASTERISK_EQUAL: {
-                    assert_int_operands(*var, value);
-                    var->integer *= value.integer;
+                    if (result_type == VALUE_INT) var->integer *= value.integer;
+                    else var->floating *= value.floating;
                 } break;
                 case TOKEN_SLASH_EQUAL: {
-                    assert_int_operands(*var, value);
-                    if (value.integer == 0) runtime_error("cannot divide by zero");
-                    var->integer /= value.integer;
-                } break;
-                case TOKEN_EQUAL: {
-                    *var = value;
+                    if (result_type == VALUE_INT) {
+                        if (value.integer == 0) runtime_error("division by zero");
+                        var->integer /= value.integer;
+                    }
+                    else {
+                        if (value.floating == 0.0) runtime_error("division by zero");
+                        var->floating /= value.floating;
+                    }
                 } break;
                 default: break;
             }
@@ -414,7 +439,7 @@ static Value evaluate(ASTNode* root) {
 
             if (left.type < VALUE_INT || left.type > VALUE_BOOL || right.type < VALUE_INT || right.type > VALUE_BOOL) {
                 runtime_error(
-                    "cannot perform operation '%s' for '%s' and '%s'",
+                    "cannot perform binary operation '%s' for '%s' and '%s'",
                     token_as_cstr(binary->op),
                     value_type_as_cstr(left.type),
                     value_type_as_cstr(right.type)
@@ -424,7 +449,7 @@ static Value evaluate(ASTNode* root) {
             ValueType result_type = VALUE_NULL;
             if (left.type == VALUE_FLOAT || right.type == VALUE_FLOAT) result_type = VALUE_FLOAT;
             else if (left.type == VALUE_INT || right.type == VALUE_INT) result_type = VALUE_INT;
-            result_type = VALUE_BOOL;
+            else result_type = VALUE_BOOL;
 
             left = promote(left, result_type);
             right = promote(right, result_type);
@@ -490,8 +515,16 @@ static Value evaluate(ASTNode* root) {
 
             switch (unary->op) {
                 case TOKEN_MINUS: {
-                    assert_int_operand(value);
-                    value.integer = -value.integer;
+                    if (value.type == VALUE_INT) value.integer = -value.integer;
+                    else if (value.type == VALUE_FLOAT) value.floating = -value.floating;
+                    else if (value.type == VALUE_BOOL) value = INT_VALUE(-value.boolean);
+                    else {
+                        runtime_error(
+                            "cannot perform unary operation '%s' for '%s'",
+                            token_as_cstr(TOKEN_MINUS),
+                            value_type_as_cstr(value.type)
+                        );
+                    }
                     return value;
                 }
                 case TOKEN_NOT: {
