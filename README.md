@@ -14,8 +14,10 @@ Pudel is inspired by `jlox` from ["Crafting Interpreters" by Robert Nystrom](htt
 - Ternary conditional operator: `?:`
 - Loops: `while`, `for`
 - Dynamic variables with types: `number`, `bool`, `string`, `list`
-- Native functions: `print`, `input`, `typeof`
-- Value type conversions
+- Native functions: `print`, `input`, `typeof`, `clock`
+- Explicit value type conversions, e.g. `int(10.45)`
+- Implicit value type promotion in arithmetic operations, allowing operations like `true * (10 + 3.6)`
+- User functions
 
 ## Building
 
