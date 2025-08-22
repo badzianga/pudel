@@ -69,7 +69,7 @@ void print_value(Value value) {
             printf("<native>");  // TODO: print proper native function value
         } break;
         case VALUE_FUNCTION: {
-            printf("<function>");  // TODO: print function name
+            printf("<function %s>", value.function->name->data);
         } break;
     }
 }
