@@ -155,6 +155,18 @@ static ASTNode* make_node_return_stmt(ASTNode* expression) {
     return (ASTNode*)node;
 }
 
+static ASTNode* make_node_break() {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_BREAK;
+    return node;
+}
+
+static ASTNode* make_node_continue() {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NODE_CONTINUE;
+    return node;
+}
+
 static ASTNode* make_node_assignment(ASTNode* target, TokenType op, ASTNode* value) {
     ASTNodeAssignment* node = malloc(sizeof(ASTNodeAssignment));
     node->base.type = AST_NODE_ASSIGNMENT;
@@ -342,6 +354,15 @@ static ASTNode* parse_statement() {
     if (match(1, TOKEN_WHILE)) return parse_while_statement();
     if (match(1, TOKEN_FOR)) return parse_for_statement();
     if (match(1, TOKEN_RETURN)) return parse_return_statement();
+
+    if (match(1, TOKEN_BREAK)) {
+        consume_expected(TOKEN_SEMICOLON, "expected ';' after 'break'");
+        return make_node_break();
+    }
+    if (match(1, TOKEN_CONTINUE)) {
+        consume_expected(TOKEN_SEMICOLON, "expected ';' after 'continue'");
+        return make_node_continue();
+    }
 
     if (match(1, TOKEN_LEFT_BRACE)) {
         ASTNode* block = parse_block();
@@ -722,6 +743,8 @@ void parser_free_ast(ASTNode* root) {
                 parser_free_ast(return_stmt->expression);
             }
         } break;
+        case AST_NODE_BREAK: break;
+        case AST_NODE_CONTINUE: break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
             parser_free_ast(assignment->target);
