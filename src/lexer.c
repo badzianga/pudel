@@ -136,6 +136,8 @@ static TokenType check_keyword(int start, int length, const char* rest, TokenTyp
 static TokenType identifier_type() {
     switch (lexer.start[0]) {
         case 'a': return check_keyword(1, 2, "nd", TOKEN_AND);
+        case 'b': return check_keyword(1, 4, "reak", TOKEN_BREAK);
+        case 'c': return check_keyword(1, 7, "ontinue", TOKEN_CONTINUE);
         case 'e': return check_keyword(1, 3, "lse", TOKEN_ELSE);
         case 'f': {
             if (lexer.current - lexer.start > 1) {
@@ -289,6 +291,8 @@ const char* token_as_cstr(TokenType type) {
         "STRING",
 
         "and",
+        "break",
+        "continue",
         "else",
         "false",
         "for",
