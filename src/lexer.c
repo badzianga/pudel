@@ -126,45 +126,45 @@ static Token read_string() {
     
 }
 
+static TokenType check_keyword(int start, int length, const char* rest, TokenType type) {
+    if (lexer.current - lexer.start == start + length && memcmp(lexer.start + start, rest, length) == 0) {
+        return type;
+    }
+    return TOKEN_IDENTIFIER;
+} 
+
+static TokenType identifier_type() {
+    switch (lexer.start[0]) {
+        case 'a': return check_keyword(1, 2, "nd", TOKEN_AND);
+        case 'e': return check_keyword(1, 3, "lse", TOKEN_ELSE);
+        case 'f': {
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'a': return check_keyword(2, 3, "lse", TOKEN_FALSE);
+                    case 'o': return check_keyword(2, 1, "r", TOKEN_FOR);
+                    case 'u': return check_keyword(2, 2, "nc", TOKEN_FUNC);
+                    default: break;
+                }
+            }
+        } break;
+        case 'i': return check_keyword(1, 1, "f", TOKEN_IF);
+        case 'n': return check_keyword(1, 3, "ull", TOKEN_NULL);
+        case 'o': return check_keyword(1, 1, "r", TOKEN_OR);
+        case 'r': return check_keyword(1, 5, "eturn", TOKEN_RETURN);
+        case 't': return check_keyword(1, 3, "rue", TOKEN_TRUE);
+        case 'v': return check_keyword(1, 2, "ar", TOKEN_VAR);
+        case 'w': return check_keyword(1, 4, "hile", TOKEN_WHILE);
+    }
+
+    return TOKEN_IDENTIFIER;
+}
+
 static Token read_identifier() {
     while (isalnum(peek()) || peek() == '_') {
         advance();
     }
 
-    static const char* keywords[] = {
-        "and",
-        "else",
-        "false",
-        "for",
-        "func",
-        "if",
-        "null",
-        "or",
-        "return",
-        "true",
-        "var",
-        "while",
-    };
-    const int keywords_amount = sizeof(keywords) / sizeof(keywords[0]);
-
-    for (int i = 0; i < keywords_amount; ++i) {
-        int length = (int)(lexer.current - lexer.start);
-        int keyword_length = strlen(keywords[i]);
-
-        if (length != keyword_length) continue;
-
-        bool might_be_keyword = true;
-        for (int j = 0; j < length; ++j) {
-            if (*(lexer.start + j) != keywords[i][j]) {
-                might_be_keyword = false;
-                break;
-            }
-        }
-        if (might_be_keyword) {
-            return make_token(TOKEN_AND + i);
-        }
-    }
-    return make_token(TOKEN_IDENTIFIER);
+    return make_token(identifier_type());
 }
 
 static Token next_token() {
