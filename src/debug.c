@@ -100,10 +100,10 @@ void debug_print_ast(ASTNode* root, int indent) {
             }
         } break;
         case AST_NODE_BREAK: {
-            printf("Break");
+            printf("Break\n");
         } break;
         case AST_NODE_CONTINUE: {
-            printf("Continue");
+            printf("Continue\n");
         } break;
         case AST_NODE_ASSIGNMENT: {
             ASTNodeAssignment* assignment = (ASTNodeAssignment*)root;
