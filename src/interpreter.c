@@ -440,6 +440,11 @@ static Value evaluate(ASTNode* root) {
                         var->floating /= value.floating;
                     }
                 } break;
+                case TOKEN_PERCENT_EQUAL: {
+                    if (result_type != VALUE_INT) runtime_error("modulo operation is only allowed for integers");
+                    if (value.integer == 0) runtime_error("modulo by zero");
+                    var->integer %= value.integer;
+                }
                 default: break;
             }
             return *var;
@@ -522,6 +527,11 @@ static Value evaluate(ASTNode* root) {
                     }
                     if (right.boolean == false) runtime_error("division by zero");
                     return INT_VALUE(left.boolean / right.boolean);
+                }
+                case TOKEN_PERCENT: {
+                    if (result_type != VALUE_INT) runtime_error("modulo operation is only allowed for integers");
+                    if (right.integer == 0) runtime_error("modulo by zero");
+                    return INT_VALUE(left.integer % right.integer);
                 }
                 case TOKEN_EQUAL_EQUAL:
                     return BOOL_VALUE(values_equal(left, right));
