@@ -18,6 +18,8 @@ static int function_depth = 0;
 typedef enum {
     FLOW_NORMAL,
     FLOW_RETURN,
+    FLOW_BREAK,
+    FLOW_CONTINUE,
 } FlowSignal;
 
 typedef struct ControlContext {
@@ -316,11 +318,25 @@ static Value evaluate(ASTNode* root) {
         } break;
         case AST_NODE_WHILE_STMT: {
             ASTNodeWhileStmt* while_stmt = (ASTNodeWhileStmt*)root;
+
+            ControlContext ctx = { 0 };
+            ctx.parent = current_context;
+            current_context = &ctx;
+
             while (is_truthy(evaluate(while_stmt->condition))) {
-                if (while_stmt->body != NULL) {
-                    evaluate(while_stmt->body);
+                if (setjmp(ctx.buf) == 0) {
+                    if (while_stmt->body != NULL) {
+                        evaluate(while_stmt->body);
+                    }
+                }
+                else {
+                    FlowSignal sig = ctx.signal;
+                    if (sig == FLOW_BREAK) break;
+                    if (sig == FLOW_CONTINUE) continue;
                 }
             }
+
+            current_context = ctx.parent;
         } break;
         case AST_NODE_RETURN_STMT: {
             ASTNodeExprStmt* return_stmt = (ASTNodeExprStmt*)root;
@@ -330,6 +346,14 @@ static Value evaluate(ASTNode* root) {
             Value return_value = (return_stmt->expression != NULL) ? evaluate(return_stmt->expression) : NULL_VALUE();
             ctx_return_value = return_value;
             current_context->signal = FLOW_RETURN;
+            longjmp(current_context->buf, 1);
+        } break;
+        case AST_NODE_BREAK: {
+            current_context->signal = FLOW_BREAK;
+            longjmp(current_context->buf, 1);
+        } break;
+        case AST_NODE_CONTINUE: {
+            current_context->signal = FLOW_CONTINUE;
             longjmp(current_context->buf, 1);
         } break;
         case AST_NODE_ASSIGNMENT: {
