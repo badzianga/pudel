@@ -13,7 +13,12 @@
 
 static Environment* global_scope = NULL;
 static Environment* env = NULL;
-static int function_depth = 0;
+
+typedef enum {
+    CTX_OTHER,
+    CTX_FUNCTION,
+    CTX_LOOP,
+} ContextType;
 
 typedef enum {
     FLOW_NORMAL,
@@ -24,6 +29,7 @@ typedef enum {
 
 typedef struct ControlContext {
     jmp_buf buf;
+    ContextType type;
     FlowSignal signal;
     struct ControlContext* parent;
 } ControlContext;
@@ -321,6 +327,7 @@ static Value evaluate(ASTNode* root) {
 
             ControlContext ctx = { 0 };
             ctx.parent = current_context;
+            ctx.type = CTX_LOOP;
             current_context = &ctx;
 
             while (is_truthy(evaluate(while_stmt->condition))) {
@@ -341,7 +348,9 @@ static Value evaluate(ASTNode* root) {
         case AST_NODE_RETURN_STMT: {
             ASTNodeExprStmt* return_stmt = (ASTNodeExprStmt*)root;
 
-            if (function_depth <= 0) runtime_error("return is only possible from functions");
+            if (current_context == NULL || current_context->type != CTX_FUNCTION) {
+                runtime_error("'return' is only allowed inside functions");
+            }
 
             Value return_value = (return_stmt->expression != NULL) ? evaluate(return_stmt->expression) : NULL_VALUE();
             ctx_return_value = return_value;
@@ -349,10 +358,18 @@ static Value evaluate(ASTNode* root) {
             longjmp(current_context->buf, 1);
         } break;
         case AST_NODE_BREAK: {
+            if (current_context == NULL || current_context->type != CTX_LOOP) {
+                runtime_error("'break' is only allowed inside loops");
+            }
+
             current_context->signal = FLOW_BREAK;
             longjmp(current_context->buf, 1);
         } break;
         case AST_NODE_CONTINUE: {
+            if (current_context == NULL || current_context->type != CTX_LOOP) {
+                runtime_error("'break' is only allowed inside loops");
+            }
+
             current_context->signal = FLOW_CONTINUE;
             longjmp(current_context->buf, 1);
         } break;
@@ -584,10 +601,9 @@ static Value evaluate(ASTNode* root) {
 
                 ControlContext ctx = { 0 };
                 ctx.parent = current_context;
+                ctx.type = CTX_FUNCTION;
                 current_context = &ctx;
                 Value return_value = NULL_VALUE();
-
-                ++function_depth;
 
                 if (setjmp(ctx.buf) == 0) {
                     evaluate(callee.function->body);
@@ -598,8 +614,6 @@ static Value evaluate(ASTNode* root) {
                         return_value = ctx_return_value;
                     }
                 }
-
-                --function_depth;
 
                 current_context = ctx.parent;
                 env = tmp;
