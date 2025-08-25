@@ -345,6 +345,39 @@ static Value evaluate(ASTNode* root) {
 
             current_context = ctx.parent;
         } break;
+        case AST_NODE_FOR_STMT: {
+            ASTNodeForStmt* for_stmt = (ASTNodeForStmt*)root;
+
+            if (for_stmt->initializer != NULL) {
+                evaluate(for_stmt->initializer);
+            }
+
+            ControlContext ctx = { 0 };
+            ctx.parent = current_context;
+            ctx.type = CTX_LOOP;
+            current_context = &ctx;
+
+            while (is_truthy(evaluate(for_stmt->condition))) {
+                if (setjmp(ctx.buf) == 0) {
+                    if (for_stmt->body != NULL) {
+                        evaluate(for_stmt->body);
+                    }
+                    if (for_stmt->increment != NULL) {
+                        evaluate(for_stmt->increment);
+                    }
+                }
+                else {
+                    FlowSignal sig = ctx.signal;
+                    if (sig == FLOW_BREAK) break;
+                    if (sig == FLOW_CONTINUE) {
+                        if (for_stmt->increment != NULL) {
+                            evaluate(for_stmt->increment);
+                        }
+                        continue;   
+                    }
+                }
+            }
+        } break;
         case AST_NODE_RETURN_STMT: {
             ASTNodeExprStmt* return_stmt = (ASTNodeExprStmt*)root;
 
