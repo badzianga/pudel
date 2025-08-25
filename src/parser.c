@@ -68,9 +68,10 @@ static void synchronize() {
     while (parser.current->type != TOKEN_EOF) {
         if (previous()->type == TOKEN_SEMICOLON) return;
         switch (parser.current->type) {
-            case TOKEN_VAR:
             case TOKEN_FOR:
+            case TOKEN_FUNC:
             case TOKEN_IF:
+            case TOKEN_VAR:
             case TOKEN_WHILE:
                 return;
             default:
@@ -243,7 +244,8 @@ static ASTNode* make_node_list() {
 }
 
 static ASTNode* parse_program();
-static ASTNode* parse_declaration();
+static ASTNode* parse_global_declaration();
+static ASTNode* parse_local_declaration();
 static ASTNode* parse_function_declaration();
 static ASTNode* parse_variable_declaration();
 static ASTNode* parse_statement();
@@ -280,17 +282,24 @@ static ASTNode* parse_program() {
             block->capacity = GROW_CAPACITY(block->capacity);
             block->statements = GROW_ARRAY(ASTNode*, block->statements, block->capacity);
         }
-        block->statements[block->count++] = parse_declaration();
+        block->statements[block->count++] = parse_global_declaration();
     }
     return (ASTNode*)block;
 }
 
-static ASTNode* parse_declaration() {
+static ASTNode* parse_global_declaration() {
     if (match(1, TOKEN_VAR)) {
         return parse_variable_declaration();
     }
     if (match(1, TOKEN_FUNC)) {
         return parse_function_declaration();
+    }
+    return parse_statement();
+}
+
+static ASTNode* parse_local_declaration() {
+    if (match(1, TOKEN_VAR)) {
+        return parse_variable_declaration();
     }
     return parse_statement();
 }
@@ -452,7 +461,7 @@ static ASTNode* parse_block() {
             block->capacity = GROW_CAPACITY(block->capacity);
             block->statements = GROW_ARRAY(ASTNode*, block->statements, block->capacity);
         }
-        block->statements[block->count++] = parse_declaration();
+        block->statements[block->count++] = parse_local_declaration();
     }
     return (ASTNode*)block;
 }
