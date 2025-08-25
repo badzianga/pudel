@@ -10,6 +10,7 @@ typedef enum {
     AST_NODE_EXPR_STMT,
     AST_NODE_IF_STMT,
     AST_NODE_WHILE_STMT,
+    AST_NODE_FOR_STMT,
     AST_NODE_RETURN_STMT,
     AST_NODE_BREAK,
     AST_NODE_CONTINUE,
@@ -74,6 +75,15 @@ typedef struct {
     ASTNode* condition;
     ASTNode* body;
 } ASTNodeWhileStmt;
+
+typedef struct {
+    ASTNode base;
+
+    ASTNode* initializer;
+    ASTNode* condition;
+    ASTNode* increment;
+    ASTNode* body;
+} ASTNodeForStmt;
 
 typedef struct {
     ASTNode base;
