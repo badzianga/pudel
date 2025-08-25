@@ -92,20 +92,6 @@ static ASTNode* make_node_block() {
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_block_filled_with(int argc, ...) {
-    ASTNodeBlock* node = (ASTNodeBlock*)make_node_block();
-    node->capacity = argc;
-    node->statements = GROW_ARRAY(ASTNode*, node->statements, node->capacity);
-
-    va_list argv;
-    va_start(argv, argc);
-    for (int i = 0; i < argc; ++i) {
-        node->statements[node->count++] = va_arg(argv, ASTNode*);
-    }
-    va_end(argv);
-    return (ASTNode*)node;
-}
-
 static ASTNode* make_node_func_decl(String* name, String** params, int param_count, ASTNode* body) {
     ASTNodeFuncDecl* node = malloc(sizeof(ASTNodeFuncDecl));
     node->base.type = AST_NODE_FUNC_DECL;
@@ -144,6 +130,16 @@ static ASTNode* make_node_while_stmt(ASTNode* condition, ASTNode* body) {
     ASTNodeWhileStmt* node = malloc(sizeof(ASTNodeWhileStmt));
     node->base.type = AST_NODE_WHILE_STMT;
     node->condition = condition;
+    node->body = body;
+    return (ASTNode*)node;
+}
+
+static ASTNode* make_node_for_stmt(ASTNode* initializer, ASTNode* condition, ASTNode* increment, ASTNode* body) {
+    ASTNodeForStmt* node = malloc(sizeof(ASTNodeForStmt));
+    node->base.type = AST_NODE_FOR_STMT;
+    node->initializer = initializer;
+    node->condition = condition;
+    node->increment = increment;
     node->body = body;
     return (ASTNode*)node;
 }
@@ -433,20 +429,11 @@ static ASTNode* parse_for_statement() {
 
     ASTNode* body = parse_statement();
 
-    if (increment != NULL) {
-        body = make_node_block_filled_with(2, body, make_node_expr_stmt(increment));
-    }
-
     if (condition == NULL) {
         condition = make_node_literal(BOOL_VALUE(true));
     }
-    body = make_node_while_stmt(condition, body); 
 
-    if (initializer != NULL) {
-        body = make_node_block_filled_with(2, initializer, body);
-    }
-
-    return body;
+    return make_node_for_stmt(initializer, condition, increment, body);
 }
 
 static ASTNode* parse_return_statement() {
@@ -735,6 +722,18 @@ void parser_free_ast(ASTNode* root) {
             parser_free_ast(while_stmt->condition);
             if (while_stmt->body != NULL) {
                 parser_free_ast(while_stmt->body);
+            }
+        } break;
+        case AST_NODE_FOR_STMT: {
+            ASTNodeForStmt* for_stmt = (ASTNodeForStmt*)root;
+            if (for_stmt->initializer != NULL) {
+                parser_free_ast(for_stmt->initializer);
+            }
+            if (for_stmt->increment != NULL) {
+                parser_free_ast(for_stmt->increment);
+            }
+            if (for_stmt->body != NULL) {
+                parser_free_ast(for_stmt->body);
             }
         } break;
         case AST_NODE_RETURN_STMT: {

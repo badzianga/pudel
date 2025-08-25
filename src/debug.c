@@ -82,10 +82,28 @@ void debug_print_ast(ASTNode* root, int indent) {
             ASTNodeWhileStmt* while_stmt = (ASTNodeWhileStmt*)root;
             printf("While:\n");
             debug_print_ast(while_stmt->condition, indent + 1);
-            for (int i = 0; i < indent; ++i) printf("  ");
             if (while_stmt->body != NULL) {
+                for (int i = 0; i < indent; ++i) printf("  ");
                 printf("Then:\n");
                 debug_print_ast(while_stmt->body, indent + 1);
+            }
+        } break;
+        case AST_NODE_FOR_STMT: {
+            ASTNodeForStmt* for_stmt = (ASTNodeForStmt*)root;
+            printf("For:\n");
+            if (for_stmt->initializer != NULL) {
+                debug_print_ast(for_stmt->initializer, indent + 1);
+            }
+            if (for_stmt->condition != NULL) {
+                debug_print_ast(for_stmt->condition, indent + 1);
+            }
+            if (for_stmt->increment != NULL) {
+                debug_print_ast(for_stmt->increment, indent + 1);
+            }
+            if (for_stmt->body != NULL) {
+                for (int i = 0; i < indent; ++i) printf("  ");
+                printf("Then:\n");
+                debug_print_ast(for_stmt->body, indent + 1);
             }
         } break;
         case AST_NODE_RETURN_STMT: {
