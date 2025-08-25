@@ -273,10 +273,6 @@ static ASTNode* parse_list();
 static ASTNode* parse_program() {
     ASTNodeBlock* block = (ASTNodeBlock*)make_node_program();
     while (parser.current->type != TOKEN_EOF) {
-        if (parser.panic_mode) {
-            synchronize();
-            continue;
-        }
 
         if (block->capacity < block->count + 1) {
             block->capacity = GROW_CAPACITY(block->capacity);
@@ -288,20 +284,33 @@ static ASTNode* parse_program() {
 }
 
 static ASTNode* parse_global_declaration() {
+    ASTNode* stmt;
     if (match(1, TOKEN_VAR)) {
-        return parse_variable_declaration();
+        stmt = parse_variable_declaration();
     }
-    if (match(1, TOKEN_FUNC)) {
-        return parse_function_declaration();
+    else if (match(1, TOKEN_FUNC)) {
+        stmt = parse_function_declaration();
     }
-    return parse_statement();
+    else {
+        stmt = parse_statement();
+    }
+    if (parser.had_error) synchronize();
+    return stmt;
 }
 
 static ASTNode* parse_local_declaration() {
+    ASTNode* stmt;
     if (match(1, TOKEN_VAR)) {
-        return parse_variable_declaration();
+        stmt = parse_variable_declaration();
     }
-    return parse_statement();
+    if (match(1, TOKEN_FUNC)) {
+        error_at(previous(), "functions can be declared only in global scope");
+    }
+    else {
+        stmt = parse_statement();
+    }
+    if (parser.had_error) synchronize();
+    return stmt;
 }
 
 static ASTNode* parse_variable_declaration() {
@@ -655,6 +664,7 @@ static ASTNode* parse_primary() {
     }
     else {
         error_at(parser.current, "unexpected value");
+        ++parser.current;
     }
     return NULL;
 }
