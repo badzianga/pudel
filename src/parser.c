@@ -807,6 +807,7 @@ void parser_free_ast(ASTNode* root) {
                 parser_free_ast(list->expressions[i]);
             }
             free(list->expressions);
+            // FIXME list value isn't freed
         }
     }
     free(root);

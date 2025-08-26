@@ -290,7 +290,7 @@ static Value evaluate(ASTNode* root) {
         } break;
         case AST_NODE_FUNC_DECL: {
             ASTNodeFuncDecl* func_decl = (ASTNodeFuncDecl*)root;
-            Function* function = malloc(sizeof(Function));
+            Function* function = malloc(sizeof(Function));  // FIXME: not freed
             // TODO: name might not be needed in function value
             function->name = func_decl->name;
             function->params = func_decl->params;

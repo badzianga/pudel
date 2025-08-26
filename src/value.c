@@ -80,13 +80,16 @@ String* string_new(int length) {
     return string;
 }
 
+// FIXME: most of the strings created using this function are not freed - especially when defining variables 
+// because of that there are huuuuuge memory leaks in recursive functions
+// one of the solutions should be string interning
 String* string_from(const char* data) {
     String* string = string_new(strlen(data));
     memcpy(string->data, data, string->length);
     return string;
 }
 
-// TODO: strings created using this method aren't freed (only string literals)
+// FIXME: strings created using this method aren't freed (only string literals)
 String* string_concat(String* a, String* b) {
     String* c = string_new(a->length + b->length);
     memcpy(c->data, a->data, a->length);
