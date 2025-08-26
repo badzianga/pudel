@@ -8,8 +8,7 @@ static void hashmap_resize(HashMap* map, int new_capacity) {
     for (int i = 0; i < map->capacity; ++i) {
         HashEntry entry = map->entries[i];
         if (entry.key != NULL) {
-            Hash hash = hash_string(entry.key);
-            int index = hash % new_capacity;
+            int index = entry.key->hash % new_capacity;
 
             while (new_entries[index].key != NULL) {
                 index = (index + 1) % new_capacity;
@@ -44,8 +43,7 @@ bool hashmap_put(HashMap* map, String* key, Value value) {
         hashmap_resize(map, map->capacity * 2);
     }
 
-    Hash hash = hash_string(key);
-    int index = hash % map->capacity;
+    int index = key->hash % map->capacity;
 
     while (map->entries[index].key != NULL) {
         if (map->entries[index].key->length == key->length && strcmp(map->entries[index].key->data, key->data) == 0) {
@@ -64,8 +62,7 @@ bool hashmap_put(HashMap* map, String* key, Value value) {
 }
 
 Value* hashmap_get_ref(HashMap* map, String* key) {
-    Hash hash = hash_string(key);
-    int index = hash % map->capacity;
+    int index = key->hash % map->capacity;
 
     while (map->entries[index].key != NULL) {
         if (map->entries[index].key->length == key->length && strcmp(map->entries[index].key->data, key->data) == 0) {
