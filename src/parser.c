@@ -315,9 +315,7 @@ static ASTNode* parse_local_declaration() {
 
 static ASTNode* parse_variable_declaration() {
     consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
-    int length = previous()->length;
-    String* name = string_new(length);
-    memcpy(name->data, previous()->value, length);
+    String* name = string_new(previous()->value, previous()->length);
 
     ASTNode* initializer = NULL;
     if (match(1, TOKEN_EQUAL)) {
@@ -331,9 +329,7 @@ static ASTNode* parse_variable_declaration() {
 static ASTNode* parse_function_declaration() {
     // function name
     consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
-    int length = previous()->length;
-    String* name = string_new(length);
-    memcpy(name->data, previous()->value, length);
+    String* name = string_new(previous()->value, previous()->length);
 
     // function parameters
     consume_expected(TOKEN_LEFT_PAREN, "expected '(' after function name");
@@ -347,9 +343,7 @@ static ASTNode* parse_function_declaration() {
                 params = GROW_ARRAY(String*, params, param_capacity);
             }
             consume_expected(TOKEN_IDENTIFIER, "expected parameter name");
-            Token* prev = previous();
-            String* param = string_new(prev->length);
-            memcpy(param->data, prev->value, prev->length);
+            String* param = string_new(previous()->value, previous()->length);
             params[param_count++] = param;
         } while (match(1, TOKEN_COMMA));
     }
@@ -620,9 +614,7 @@ static ASTNode* parse_call() {
 
 static ASTNode* parse_primary() {
     if (match(1, TOKEN_IDENTIFIER)) {
-        int length = previous()->length;
-        String* name = string_new(length);
-        memcpy(name->data, previous()->value, length);
+        String* name = string_new(previous()->value, previous()->length);
         return make_node_var(name);
     }
     if (match(1, TOKEN_INT)) {
@@ -634,9 +626,7 @@ static ASTNode* parse_primary() {
         return make_node_literal(FLOAT_VALUE(value));
     }
     if (match(1, TOKEN_STRING)) {
-        int length = previous()->length - 2;
-        String* string = string_new(length);
-        memcpy(string->data, previous()->value + 1, length);
+        String* string = string_new(previous()->value + 1, previous()->length - 2);
         return make_node_literal(STRING_VALUE(string));
     }
     if (match(1, TOKEN_TRUE)) {

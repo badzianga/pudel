@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "value.h"
+#include "hash.h"
 
 const char* value_type_as_cstr(ValueType type) {
     switch (type) {
@@ -74,9 +75,11 @@ void print_value(Value value) {
     }
 }
 
-String* string_new(int length) {
+String* string_new(const char* data, int length) {
     String* string = calloc(1, sizeof(String) + length + 1);
     string->length = length;
+    string->hash = hash_cstring(data, length);
+    memcpy(string->data, data, length);
     return string;
 }
 
@@ -84,21 +87,23 @@ String* string_new(int length) {
 // because of that there are huuuuuge memory leaks in recursive functions
 // one of the solutions should be string interning
 String* string_from(const char* data) {
-    String* string = string_new(strlen(data));
-    memcpy(string->data, data, string->length);
+    String* string = string_new(data, strlen(data));
     return string;
 }
 
 // FIXME: strings created using this method aren't freed (only string literals)
 String* string_concat(String* a, String* b) {
-    String* c = string_new(a->length + b->length);
+    int length = a->length + b->length;
+    String* c = calloc(1, sizeof(String) + length + 1);
+    c->length = length;
     memcpy(c->data, a->data, a->length);
     memcpy(c->data + a->length, b->data, b->length);
+    c->hash = hash_string(c);
     return c;
 }
 
 bool strings_equal(String* a, String* b) {
-    return a->length == b->length && strcmp(a->data, b->data) == 0;
+    return a->hash == b->hash && a->length == b->length && strcmp(a->data, b->data) == 0;
 }
 
 List* list_new(int length) {
