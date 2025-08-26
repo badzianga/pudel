@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <stdbool.h>
+#include "hash.h"
 
 typedef enum {
     VALUE_NULL,
@@ -13,8 +14,9 @@ typedef enum {
     VALUE_FUNCTION,
 } ValueType;
 
-typedef struct {
+typedef struct String {
     int length;
+    Hash hash;
     char data[];
 } String;
 

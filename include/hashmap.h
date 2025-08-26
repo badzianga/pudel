@@ -1,5 +1,4 @@
 #pragma once
-#include <stdint.h>
 #include "value.h"
 
 #define HASHMAP_INITIAL_CAPACITY 16
@@ -15,8 +14,6 @@ typedef struct {
     int capacity;
     int count;
 } HashMap;
-
-typedef uint32_t Hash;
 
 HashMap hashmap_create();
 void hashmap_free(HashMap* map);

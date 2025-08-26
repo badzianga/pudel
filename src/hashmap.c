@@ -2,15 +2,6 @@
 #include <string.h>
 #include "hashmap.h"
 
-static Hash hash_string(String* string) {
-    Hash hash = 2166136261u;
-    for (int i = 0; i < string->length; i++) {
-        hash ^= (uint8_t)string->data[i];
-        hash *= 16777619;
-    }
-    return hash;
-}
-
 static void hashmap_resize(HashMap* map, int new_capacity) {
     HashEntry* new_entries = calloc(new_capacity, sizeof(HashEntry));
 
