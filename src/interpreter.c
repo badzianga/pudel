@@ -508,6 +508,13 @@ static Value evaluate(ASTNode* root) {
             Value left = evaluate(binary->left);
             Value right = evaluate(binary->right);
 
+            if (binary->op == TOKEN_EQUAL_EQUAL) {
+                return BOOL_VALUE(values_equal(left, right));
+            }
+            if (binary->op == TOKEN_NOT_EQUAL) {
+                return BOOL_VALUE(!values_equal(left, right));
+            }
+
             // ugly hack for string concatenation
             if (binary->op == TOKEN_PLUS && (left.type == VALUE_STRING || right.type == VALUE_STRING)) {
                 if (left.type == VALUE_STRING && right.type == VALUE_STRING) {
@@ -566,10 +573,6 @@ static Value evaluate(ASTNode* root) {
                     if (right.integer == 0) runtime_error("modulo by zero");
                     return INT_VALUE(left.integer % right.integer);
                 }
-                case TOKEN_EQUAL_EQUAL:
-                    return BOOL_VALUE(values_equal(left, right));
-                case TOKEN_NOT_EQUAL:
-                    return BOOL_VALUE(!values_equal(left, right));
                 case TOKEN_GREATER: {
                     if (result_type == VALUE_INT) return BOOL_VALUE(left.integer > right.integer);
                     if (result_type == VALUE_FLOAT) return BOOL_VALUE(left.floating > right.floating); 
