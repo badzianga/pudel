@@ -63,13 +63,7 @@ typedef struct Token {
     int length;
 } Token;
 
-typedef struct TokenArray {
-    Token* tokens;
-    int count;
-    int capacity;
-} TokenArray;
-
-TokenArray lexer_lex(const char* source);
-void lexer_free_tokens(TokenArray* token_array);
+void lexer_init(const char* source);
+Token lexer_next_token();
 
 const char* token_as_cstr(TokenType type);

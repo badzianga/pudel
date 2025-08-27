@@ -144,5 +144,5 @@ typedef struct {
     int capacity;
 } ASTNodeList;
 
-bool parser_parse(TokenArray* token_array, ASTNode** output);
+bool parser_parse(const char* source, ASTNode** output);
 void parser_free_ast(ASTNode* root);

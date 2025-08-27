@@ -9,40 +9,50 @@
 #include "value.h"
 
 typedef struct Parser {
-    Token* tokens;
-    int count;
-    Token* current;
+    Token current;
+    Token previous;
     bool had_error;
     bool panic_mode;
 } Parser;
 
 static Parser parser;
 
-static void error_at(Token* token, const char* message) {
+static void error_at(Token token, const char* message) {
     if (parser.panic_mode) return;
     parser.had_error = true;
     parser.panic_mode = true;
-    fprintf(stderr, "[line %d] error", token->line);
+    fprintf(stderr, "[line %d] error", token.line);
 
-    if (token->type == TOKEN_EOF) {
+    if (token.type == TOKEN_EOF) {
         fprintf(stderr, " at end");
     }
-    else if (token->type == TOKEN_ERROR) {}
+    else if (token.type == TOKEN_ERROR) {}
     else {
-        fprintf(stderr, " at '%.*s'", token->length, token->value);
+        fprintf(stderr, " at '%.*s'", token.length, token.value);
     }
 
     fprintf(stderr, ": %s\n", message);
 }
 
+static void advance() {
+    parser.previous = parser.current;
+
+    for (;;) {
+        parser.current = lexer_next_token();
+        if (parser.current.type != TOKEN_ERROR) break;
+
+        error_at(parser.current, parser.current.value);
+    }
+}
+
 static bool match(int argc, ...) {
-    TokenType token = parser.current->type;
+    TokenType token = parser.current.type;
     va_list argv;
     va_start(argv, argc);
     for (int i = 0; i < argc; ++i) {
         if (token == va_arg(argv, TokenType)) {
             va_end(argv);
-            ++parser.current;
+            advance();
             return true;
         }
     }
@@ -51,23 +61,19 @@ static bool match(int argc, ...) {
 }
 
 static void consume_expected(TokenType token, const char* error_if_fail) {
-    if (parser.current->type != token) {
-        error_at(parser.current, error_if_fail);
+    if (parser.current.type != token) {
+        error_at( parser.current, error_if_fail);
         return;
     }
-    ++parser.current;
-}
-
-inline static Token* previous() {
-    return parser.current - 1;
+    advance();
 }
 
 static void synchronize() {
     parser.panic_mode = false;
 
-    while (parser.current->type != TOKEN_EOF) {
-        if (previous()->type == TOKEN_SEMICOLON) return;
-        switch (parser.current->type) {
+    while (parser.current.type != TOKEN_EOF) {
+        if (parser.previous.type == TOKEN_SEMICOLON) return;
+        switch (parser.current.type) {
             case TOKEN_FOR:
             case TOKEN_FUNC:
             case TOKEN_IF:
@@ -77,7 +83,7 @@ static void synchronize() {
             default:
                 ;
         }
-        ++parser.current;
+        advance();
     }
 }
 
@@ -272,7 +278,7 @@ static ASTNode* parse_list();
 
 static ASTNode* parse_program() {
     ASTNodeBlock* block = (ASTNodeBlock*)make_node_program();
-    while (parser.current->type != TOKEN_EOF) {
+    while (parser.current.type != TOKEN_EOF) {
 
         if (block->capacity < block->count + 1) {
             block->capacity = GROW_CAPACITY(block->capacity);
@@ -304,7 +310,7 @@ static ASTNode* parse_local_declaration() {
         stmt = parse_variable_declaration();
     }
     else if (match(1, TOKEN_FUNC)) {
-        error_at(previous(), "functions can be declared only in global scope");
+        error_at(parser.previous, "functions can be declared only in global scope");
     }
     else {
         stmt = parse_statement();
@@ -315,7 +321,7 @@ static ASTNode* parse_local_declaration() {
 
 static ASTNode* parse_variable_declaration() {
     consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
-    String* name = string_new(previous()->value, previous()->length);
+    String* name = string_new(parser.previous.value, parser.previous.length);
 
     ASTNode* initializer = NULL;
     if (match(1, TOKEN_EQUAL)) {
@@ -329,21 +335,21 @@ static ASTNode* parse_variable_declaration() {
 static ASTNode* parse_function_declaration() {
     // function name
     consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
-    String* name = string_new(previous()->value, previous()->length);
+    String* name = string_new(parser.previous.value, parser.previous.length);
 
     // function parameters
     consume_expected(TOKEN_LEFT_PAREN, "expected '(' after function name");
     String** params = calloc(1, sizeof(String*));
     int param_count = 0;
     int param_capacity = 0;
-    if (parser.current->type != TOKEN_RIGHT_PAREN) {
+    if (parser.current.type != TOKEN_RIGHT_PAREN) {
         do {
             if (param_capacity < param_count + 1) {
                 param_capacity = GROW_CAPACITY(param_capacity);
                 params = GROW_ARRAY(String*, params, param_capacity);
             }
             consume_expected(TOKEN_IDENTIFIER, "expected parameter name");
-            String* param = string_new(previous()->value, previous()->length);
+            String* param = string_new(parser.previous.value, parser.previous.length);
             params[param_count++] = param;
         } while (match(1, TOKEN_COMMA));
     }
@@ -428,13 +434,13 @@ static ASTNode* parse_for_statement() {
     }
 
     ASTNode* condition = NULL;
-    if (parser.current->type != TOKEN_SEMICOLON) {
+    if (parser.current.type != TOKEN_SEMICOLON) {
         condition = parse_expression();
     }
     consume_expected(TOKEN_SEMICOLON, "expected ';' after loop condition");
 
     ASTNode* increment = NULL;
-    if (parser.current->type != TOKEN_RIGHT_PAREN) {
+    if (parser.current.type != TOKEN_RIGHT_PAREN) {
         increment = parse_expression();
     }
     consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after for clauses");
@@ -450,7 +456,7 @@ static ASTNode* parse_for_statement() {
 
 static ASTNode* parse_return_statement() {
     ASTNode* expression = NULL;
-    if (parser.current->type != TOKEN_SEMICOLON) {
+    if (parser.current.type != TOKEN_SEMICOLON) {
         expression = parse_expression();
     }
     consume_expected(TOKEN_SEMICOLON, "expected ';' after 'return' statement");
@@ -459,7 +465,7 @@ static ASTNode* parse_return_statement() {
 
 static ASTNode* parse_block() {
     ASTNodeBlock* block = (ASTNodeBlock*)make_node_block();
-    while (parser.current->type != TOKEN_RIGHT_BRACE && parser.current->type != TOKEN_EOF) {
+    while (parser.current.type != TOKEN_RIGHT_BRACE && parser.current.type != TOKEN_EOF) {
         if (block->capacity < block->count + 1) {
             block->capacity = GROW_CAPACITY(block->capacity);
             block->statements = GROW_ARRAY(ASTNode*, block->statements, block->capacity);
@@ -477,11 +483,11 @@ static ASTNode* parse_assignment() {
     ASTNode* target = parse_ternary();
 
     if (match(6, TOKEN_EQUAL, TOKEN_PLUS_EQUAL, TOKEN_MINUS_EQUAL, TOKEN_ASTERISK_EQUAL, TOKEN_SLASH_EQUAL, TOKEN_PERCENT_EQUAL)) {
-        Token* op_token = previous();
+        Token op_token = parser.previous;
         ASTNode* value = parse_assignment();
         
         if (target->type == AST_NODE_VAR || target->type == AST_NODE_SUBSCRIPTION) {
-            return make_node_assignment(target, op_token->type, value);
+            return make_node_assignment(target, op_token.type, value);
         }
 
         error_at(op_token, "invalid assignment target");
@@ -526,7 +532,7 @@ static ASTNode* parse_and() {
 static ASTNode* parse_equality() {
     ASTNode* left = parse_comparison();
     while (match(2, TOKEN_EQUAL_EQUAL, TOKEN_NOT_EQUAL)) {
-        TokenType op = previous()->type;
+        TokenType op = parser.previous.type;
         ASTNode* right = parse_comparison();
         left = make_node_binary(left, op, right);
     }
@@ -536,7 +542,7 @@ static ASTNode* parse_equality() {
 static ASTNode* parse_comparison() {
     ASTNode* left = parse_term();
     while (match(4, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_LESS, TOKEN_LESS_EQUAL)) {
-        TokenType op = previous()->type;
+        TokenType op = parser.previous.type;
         ASTNode* right = parse_term();
         left = make_node_binary(left, op, right);
     }
@@ -546,7 +552,7 @@ static ASTNode* parse_comparison() {
 static ASTNode* parse_term() {
     ASTNode* left = parse_factor();
     while(match(2, TOKEN_PLUS, TOKEN_MINUS)) {
-        TokenType op = previous()->type;
+        TokenType op = parser.previous.type;
         ASTNode* right = parse_factor();
         left = make_node_binary(left, op, right);
     }
@@ -556,7 +562,7 @@ static ASTNode* parse_term() {
 static ASTNode* parse_factor() {
     ASTNode* left = parse_unary();
     while (match(3, TOKEN_ASTERISK, TOKEN_SLASH, TOKEN_PERCENT)) {
-        TokenType op = previous()->type;
+        TokenType op = parser.previous.type;
         ASTNode* right = parse_unary();
         left = make_node_binary(left, op, right);
     }
@@ -565,7 +571,7 @@ static ASTNode* parse_factor() {
 
 static ASTNode* parse_unary() {
     if (match(2, TOKEN_MINUS, TOKEN_NOT)) {
-        TokenType op = previous()->type;
+        TokenType op = parser.previous.type;
         ASTNode* right = parse_primary();
         return make_node_unary(op, right);
     }
@@ -575,7 +581,7 @@ static ASTNode* parse_unary() {
 static ASTNode* finish_call(ASTNode* callee) {
     ASTNodeCall* call = (ASTNodeCall*)make_node_call(callee);
 
-    if (parser.current->type != TOKEN_RIGHT_PAREN) {
+    if (parser.current.type != TOKEN_RIGHT_PAREN) {
         do {
             if (call->capacity < call->count + 1) {
                 call->capacity = GROW_CAPACITY(call->capacity);
@@ -614,19 +620,19 @@ static ASTNode* parse_call() {
 
 static ASTNode* parse_primary() {
     if (match(1, TOKEN_IDENTIFIER)) {
-        String* name = string_new(previous()->value, previous()->length);
+        String* name = string_new(parser.previous.value, parser.previous.length);
         return make_node_var(name);
     }
     if (match(1, TOKEN_INT)) {
-        int64_t value = strtoll(previous()->value, NULL, 10);
+        int64_t value = strtoll(parser.previous.value, NULL, 10);
         return make_node_literal(INT_VALUE(value));
     }
     if (match(1, TOKEN_FLOAT)) {
-        double value = strtod(previous()->value, NULL);
+        double value = strtod(parser.previous.value, NULL);
         return make_node_literal(FLOAT_VALUE(value));
     }
     if (match(1, TOKEN_STRING)) {
-        String* string = string_new(previous()->value + 1, previous()->length - 2);
+        String* string = string_new(parser.previous.value + 1, parser.previous.length - 2);
         return make_node_literal(STRING_VALUE(string));
     }
     if (match(1, TOKEN_TRUE)) {
@@ -649,20 +655,20 @@ static ASTNode* parse_primary() {
         return list;
     }
 
-    if (parser.current->type == TOKEN_ERROR) {
-        error_at(parser.current, parser.current->value);
+    if (parser.current.type == TOKEN_ERROR) {
+        error_at(parser.current, parser.current.value);
     }
     else {
         error_at(parser.current, "unexpected value");
-        ++parser.current;
-    }
+        advance();
+     }
     return NULL;
 }
 
 static ASTNode* parse_list() {
     ASTNodeList* list = (ASTNodeList*)make_node_list();
 
-    if (parser.current->type == TOKEN_RIGHT_BRACKET) {
+    if (parser.current.type == TOKEN_RIGHT_BRACKET) {
         return (ASTNode*)list;
     }
 
@@ -677,12 +683,12 @@ static ASTNode* parse_list() {
     return (ASTNode*)list;
 }
 
-bool parser_parse(TokenArray* token_array, ASTNode** output) {
-    parser.tokens = token_array->tokens;
-    parser.count = token_array->count;
-    parser.current = parser.tokens;
+bool parser_parse(const char* source, ASTNode** output) {
+    lexer_init(source);
+
     parser.had_error = false;
     parser.panic_mode = false;
+    advance();
 
     *output = parse_program();
 

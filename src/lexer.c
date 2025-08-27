@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include "lexer.h"
-#include "memory.h"
 
 typedef struct Lexer {
     const char* start;
@@ -11,7 +10,7 @@ typedef struct Lexer {
     int line;
 } Lexer;
 
-static Lexer lexer;
+static Lexer lexer = { 0 };
 
 inline static bool is_at_end() {
     return *lexer.current == '\0';
@@ -169,7 +168,13 @@ static Token read_identifier() {
     return make_token(identifier_type());
 }
 
-static Token next_token() {
+void lexer_init(const char* source) {
+    lexer.start = source;
+    lexer.current = source;
+    lexer.line = 1;
+}
+
+Token lexer_next_token() {
     skip_whitespace();
     lexer.start = lexer.current;
 
@@ -227,32 +232,6 @@ static Token next_token() {
     else if (isalpha(c) || c == '_') return read_identifier();
 
     return make_error_token("unexpected character");
-}
-
-TokenArray lexer_lex(const char* source) {
-    lexer.start = source;
-    lexer.current = source;
-    lexer.line = 1;
-
-    TokenArray array = { 0 };
-
-    for (;;) {
-        if (array.capacity < array.count + 1) {
-            array.capacity = GROW_CAPACITY(array.capacity);
-            array.tokens = GROW_ARRAY(Token, array.tokens, array.capacity);
-        }
-        Token token = next_token();
-        array.tokens[array.count++] = token;
-
-        if (token.type == TOKEN_EOF) break;
-    }
-    return array;
-}
-
-void lexer_free_tokens(TokenArray* token_array) {
-    token_array->tokens = reallocate(token_array->tokens, 0);
-    token_array->count = 0;
-    token_array->capacity = 0;
 }
 
 const char* token_as_cstr(TokenType type) {

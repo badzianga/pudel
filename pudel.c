@@ -3,7 +3,6 @@
 #include "debug.h"
 #include "interpreter.h"
 #include "io.h"
-#include "lexer.h"
 #include "parser.h"
 #include "strings.h"
 
@@ -14,16 +13,11 @@ int main(int argc, char** argv) {
     }
     char* source = file_read(argv[1]);
 
-    TokenArray token_array = lexer_lex(source);
-
-    printf("----------------------------------------------------------------\n");
-
     interned_strings_init();
 
     ASTNode* ast;
-    if (!parser_parse(&token_array, &ast)) {
+    if (!parser_parse(source, &ast)) {
         // don't free ast, because it might be corrupted
-        lexer_free_tokens(&token_array);
         free(source);
         return 1;
     }
@@ -34,7 +28,6 @@ int main(int argc, char** argv) {
     interpreter_interpret(ast);
 
     parser_free_ast(ast);
-    lexer_free_tokens(&token_array);
     free(source);
     interned_strings_free();
     return 0;
