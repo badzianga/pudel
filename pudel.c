@@ -15,7 +15,6 @@ int main(int argc, char** argv) {
     char* source = file_read(argv[1]);
 
     TokenArray token_array = lexer_lex(source);
-    debug_print_token_array(&token_array);
 
     printf("----------------------------------------------------------------\n");
 

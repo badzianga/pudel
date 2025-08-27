@@ -1,33 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include "debug.h"
-#include "lexer.h"
-#include "parser.h"
-#include "value.h"
-
-void debug_print_token_array(TokenArray* token_array) {
-    const Token* end = token_array->tokens + token_array->count;
-    for (const Token* token = token_array->tokens; token != end; ++token) {
-        TokenType type = token->type;
-
-        if (type == TOKEN_INT || type == TOKEN_FLOAT || type == TOKEN_STRING || type == TOKEN_IDENTIFIER) {
-            printf(
-                "Line: %d,\ttoken: %s,\tvalue: %.*s\n",
-                token->line,
-                token_as_cstr(type),
-                token->length,
-                token->value
-            );
-        }
-        else {
-            printf(
-                "Line: %d,\ttoken: %s\n",
-                token->line,
-                token_as_cstr(type)
-            );
-        }
-    }
-}
 
 void debug_print_ast(ASTNode* root, int indent) {
     for (int i = 0; i < indent; ++i) printf("  ");
