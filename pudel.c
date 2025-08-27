@@ -5,6 +5,7 @@
 #include "io.h"
 #include "lexer.h"
 #include "parser.h"
+#include "strings.h"
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -17,6 +18,8 @@ int main(int argc, char** argv) {
     debug_print_token_array(&token_array);
 
     printf("----------------------------------------------------------------\n");
+
+    interned_strings_init();
 
     ASTNode* ast;
     if (!parser_parse(&token_array, &ast)) {
@@ -34,5 +37,6 @@ int main(int argc, char** argv) {
     parser_free_ast(ast);
     lexer_free_tokens(&token_array);
     free(source);
+    interned_strings_free();
     return 0;
 }

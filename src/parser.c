@@ -701,7 +701,6 @@ void parser_free_ast(ASTNode* root) {
         } break;
         case AST_NODE_FUNC_DECL: {
             ASTNodeFuncDecl* func_decl = (ASTNodeFuncDecl*)root;
-            free(func_decl->name);
             for (int i = 0; i < func_decl->param_count; ++i) {
                 free(func_decl->params[i]);
             }
@@ -710,7 +709,6 @@ void parser_free_ast(ASTNode* root) {
         } break;
         case AST_NODE_VAR_DECL: {
             ASTNodeVarDecl* var_decl = (ASTNodeVarDecl*)root;
-            free(var_decl->name);
             parser_free_ast(var_decl->initializer);
         } break;
         case AST_NODE_EXPR_STMT: {
@@ -781,16 +779,8 @@ void parser_free_ast(ASTNode* root) {
             parser_free_ast(subscription->expression);
             parser_free_ast(subscription->index);
         } break;
-        case AST_NODE_LITERAL: {
-            ASTNodeLiteral* literal = (ASTNodeLiteral*)root;
-            if (literal->value.type == VALUE_STRING) {
-                free(literal->value.string);
-            }
-        } break;
-        case AST_NODE_VAR: {
-            ASTNodeVar* var = (ASTNodeVar*)root;
-            free(var->name);
-        } break;
+        case AST_NODE_LITERAL: break;
+        case AST_NODE_VAR: break;
         case AST_NODE_LIST: {
             ASTNodeList* list = (ASTNodeList*)root;
             for (int i = 0; i < list->count; ++i) {

@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "value.h"
 #include "hash.h"
+#include "strings.h"
+#include "value.h"
 
 const char* value_type_as_cstr(ValueType type) {
     switch (type) {
@@ -75,31 +76,33 @@ void print_value(Value value) {
     }
 }
 
-String* string_new(const char* data, int length) {
+String* string_create(int length, Hash hash, const char* data) {
     String* string = calloc(1, sizeof(String) + length + 1);
     string->length = length;
-    string->hash = hash_cstring(data, length);
+    string->hash = hash;
     memcpy(string->data, data, length);
     return string;
 }
 
+String* string_new(const char* data, int length) {
+    return intern_string(data, length);
+}
+
 // FIXME: most of the strings created using this function are not freed - especially when defining variables 
 // because of that there are huuuuuge memory leaks in recursive functions
-// one of the solutions should be string interning
 String* string_from(const char* data) {
-    String* string = string_new(data, strlen(data));
-    return string;
+    return intern_string(data, strlen(data));
 }
 
 // FIXME: strings created using this method aren't freed (only string literals)
 String* string_concat(String* a, String* b) {
     int length = a->length + b->length;
-    String* c = calloc(1, sizeof(String) + length + 1);
-    c->length = length;
-    memcpy(c->data, a->data, a->length);
-    memcpy(c->data + a->length, b->data, b->length);
-    c->hash = hash_string(c);
-    return c;
+    char* c = malloc(sizeof(char) * length);
+    memcpy(c, a->data, a->length);
+    memcpy(c + a->length, b->data, b->length);
+    String* string = intern_string(c, length);
+    free(c);
+    return string;
 }
 
 bool strings_equal(String* a, String* b) {

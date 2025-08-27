@@ -75,6 +75,7 @@ const char* value_type_as_cstr(ValueType type);
 void print_value(Value value);
 bool values_equal(Value a, Value b);
 
+String* string_create(int length, Hash hash, const char* data);  // used internally by functions below
 String* string_new(const char* data, int length);
 String* string_from(const char* data);
 String* string_concat(String* a, String* b);
