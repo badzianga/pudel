@@ -88,13 +88,10 @@ String* string_new(const char* data, int length) {
     return intern_string(data, length);
 }
 
-// FIXME: most of the strings created using this function are not freed - especially when defining variables 
-// because of that there are huuuuuge memory leaks in recursive functions
 String* string_from(const char* data) {
     return intern_string(data, strlen(data));
 }
 
-// FIXME: strings created using this method aren't freed (only string literals)
 String* string_concat(String* a, String* b) {
     int length = a->length + b->length;
     char* c = malloc(sizeof(char) * length);
