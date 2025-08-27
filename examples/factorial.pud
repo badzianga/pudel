@@ -1,7 +1,7 @@
 // This program calculates factorial using for loop.
 
 var factorial = 1;
-var n = 5;
+var n = int(input("n: "));
 for (var i = 1; i <= n; i += 1) {
     factorial *= i;
 }
