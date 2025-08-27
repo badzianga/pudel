@@ -303,7 +303,7 @@ static ASTNode* parse_local_declaration() {
     if (match(1, TOKEN_VAR)) {
         stmt = parse_variable_declaration();
     }
-    if (match(1, TOKEN_FUNC)) {
+    else if (match(1, TOKEN_FUNC)) {
         error_at(previous(), "functions can be declared only in global scope");
     }
     else {
