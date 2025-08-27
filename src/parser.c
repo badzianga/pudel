@@ -655,13 +655,8 @@ static ASTNode* parse_primary() {
         return list;
     }
 
-    if (parser.current.type == TOKEN_ERROR) {
-        error_at(parser.current, parser.current.value);
-    }
-    else {
-        error_at(parser.current, "unexpected value");
-        advance();
-     }
+    error_at(parser.current, "unexpected value");
+    advance();
     return NULL;
 }
 
