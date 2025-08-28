@@ -378,9 +378,20 @@ static ASTNode* parse_function_declaration() {
     consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after function parameters");
 
     // function body
-    consume_expected(TOKEN_LEFT_BRACE, "expected function body");
-    ASTNode* body = parse_block();
-    consume_expected(TOKEN_RIGHT_BRACE, "expected '}' after function body");
+    ASTNode* body;
+    if (match(1, TOKEN_LEFT_BRACE)) {
+        body = parse_block();
+        consume_expected(TOKEN_RIGHT_BRACE, "expected '}' after function body");
+    }
+    else if (match(1, TOKEN_EQUAL)) {
+        int line = parser.previous.line;
+        ASTNode* return_expression = parse_expression();
+        consume_expected(TOKEN_SEMICOLON, "expected ';' after function return value");
+        body = make_node_return_stmt(line, return_expression);
+    }
+    else {
+        error_at(parser.current, "expected function body");
+    }
 
     return make_node_func_decl(identifier.line, name, params, param_count, body);
 }
