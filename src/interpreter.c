@@ -351,6 +351,9 @@ static Value evaluate(ASTNode* root) {
         case AST_NODE_FOR_STMT: {
             ASTNodeForStmt* for_stmt = (ASTNodeForStmt*)root;
 
+            Environment* previous = env;
+            env = env_new_with_enclosing(previous);
+
             if (for_stmt->initializer != NULL) {
                 evaluate(for_stmt->initializer);
             }
@@ -380,6 +383,9 @@ static Value evaluate(ASTNode* root) {
                     }
                 }
             }
+
+            env_free(env);
+            env = previous;
         } break;
         case AST_NODE_RETURN_STMT: {
             ASTNodeExprStmt* return_stmt = (ASTNodeExprStmt*)root;
