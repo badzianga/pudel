@@ -93,15 +93,17 @@ static ASTNode* make_node_program() {
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_block() {
+static ASTNode* make_node_block(int line) {
     ASTNodeBlock* node = calloc(1, sizeof(ASTNodeBlock));
     node->base.type = AST_NODE_BLOCK;
+    node->base.line = line;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_func_decl(String* name, String** params, int param_count, ASTNode* body) {
+static ASTNode* make_node_func_decl(int line, String* name, String** params, int param_count, ASTNode* body) {
     ASTNodeFuncDecl* node = malloc(sizeof(ASTNodeFuncDecl));
     node->base.type = AST_NODE_FUNC_DECL;
+    node->base.line = line;
     node->name = name;
     node->params = params;
     node->param_count = param_count;
@@ -109,41 +111,46 @@ static ASTNode* make_node_func_decl(String* name, String** params, int param_cou
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_var_decl(String* name, ASTNode* initializer) {
+static ASTNode* make_node_var_decl(int line, String* name, ASTNode* initializer) {
     ASTNodeVarDecl* node = malloc(sizeof(ASTNodeVarDecl));
     node->base.type = AST_NODE_VAR_DECL;
+    node->base.line = line;
     node->name = name;
     node->initializer = initializer;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_expr_stmt(ASTNode* expression) {
+static ASTNode* make_node_expr_stmt(int line, ASTNode* expression) {
     ASTNodeExprStmt* node = malloc(sizeof(ASTNodeExprStmt));
     node->base.type = AST_NODE_EXPR_STMT;
+    node->base.line = line;
     node->expression = expression;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_if_stmt(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
+static ASTNode* make_node_if_stmt(int line, ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
     ASTNodeIfStmt* node = malloc(sizeof(ASTNodeIfStmt));
     node->base.type = AST_NODE_IF_STMT;
+    node->base.line = line;
     node->condition = condition;
     node->then_branch = then_branch;
     node->else_branch = else_branch;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_while_stmt(ASTNode* condition, ASTNode* body) {
+static ASTNode* make_node_while_stmt(int line, ASTNode* condition, ASTNode* body) {
     ASTNodeWhileStmt* node = malloc(sizeof(ASTNodeWhileStmt));
     node->base.type = AST_NODE_WHILE_STMT;
+    node->base.line = line;
     node->condition = condition;
     node->body = body;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_for_stmt(ASTNode* initializer, ASTNode* condition, ASTNode* increment, ASTNode* body) {
+static ASTNode* make_node_for_stmt(int line, ASTNode* initializer, ASTNode* condition, ASTNode* increment, ASTNode* body) {
     ASTNodeForStmt* node = malloc(sizeof(ASTNodeForStmt));
     node->base.type = AST_NODE_FOR_STMT;
+    node->base.line = line;
     node->initializer = initializer;
     node->condition = condition;
     node->increment = increment;
@@ -151,101 +158,114 @@ static ASTNode* make_node_for_stmt(ASTNode* initializer, ASTNode* condition, AST
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_return_stmt(ASTNode* expression) {
+static ASTNode* make_node_return_stmt(int line, ASTNode* expression) {
     ASTNodeExprStmt* node = malloc(sizeof(ASTNodeExprStmt));
     node->base.type = AST_NODE_RETURN_STMT;
+    node->base.line = line;
     node->expression = expression;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_break() {
+static ASTNode* make_node_break(int line) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_BREAK;
+    node->line = line;
     return node;
 }
 
-static ASTNode* make_node_continue() {
+static ASTNode* make_node_continue(int line) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_NODE_CONTINUE;
+    node->line = line;
     return node;
 }
 
-static ASTNode* make_node_assignment(ASTNode* target, TokenType op, ASTNode* value) {
+static ASTNode* make_node_assignment(int line, ASTNode* target, TokenType op, ASTNode* value) {
     ASTNodeAssignment* node = malloc(sizeof(ASTNodeAssignment));
     node->base.type = AST_NODE_ASSIGNMENT;
+    node->base.line = line;
     node->target = target;
     node->op = op;
     node->value = value;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_ternary(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
+static ASTNode* make_node_ternary(int line, ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
     ASTNodeIfStmt* node = malloc(sizeof(ASTNodeIfStmt));
     node->base.type = AST_NODE_TERNARY;
+    node->base.line = line;
     node->condition = condition;
     node->then_branch = then_branch;
     node->else_branch = else_branch;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_logical(ASTNode* left, TokenType op, ASTNode* right) {
+static ASTNode* make_node_logical(int line, ASTNode* left, TokenType op, ASTNode* right) {
     ASTNodeBinary* node = malloc(sizeof(ASTNodeBinary));
     node->base.type = AST_NODE_LOGICAL;
+    node->base.line = line;
     node->left = left;
     node->op = op;
     node->right = right;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_binary(ASTNode* left, TokenType op, ASTNode* right) {
+static ASTNode* make_node_binary(int line, ASTNode* left, TokenType op, ASTNode* right) {
     ASTNodeBinary* node = malloc(sizeof(ASTNodeBinary));
     node->base.type = AST_NODE_BINARY;
+    node->base.line = line;
     node->left = left;
     node->op = op;
     node->right = right;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_unary(TokenType op, ASTNode* right) {
+static ASTNode* make_node_unary(int line, TokenType op, ASTNode* right) {
     ASTNodeUnary* node = malloc(sizeof(ASTNodeUnary));
     node->base.type = AST_NODE_UNARY;
+    node->base.line = line;
     node->op = op;
     node->right = right;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_call(ASTNode* callee) {
+static ASTNode* make_node_call(int line, ASTNode* callee) {
     ASTNodeCall* node = calloc(1, sizeof(ASTNodeCall));
     node->base.type = AST_NODE_CALL;
+    node->base.line = line;
     node->callee = callee;
     return (ASTNode*)node; 
 }
 
-static ASTNode* make_node_subscription(ASTNode* expression, ASTNode* index) {
+static ASTNode* make_node_subscription(int line, ASTNode* expression, ASTNode* index) {
     ASTNodeSubscription* node = malloc(sizeof(ASTNodeSubscription));
     node->base.type = AST_NODE_SUBSCRIPTION;
+    node->base.line = line;
     node->expression = expression;
     node->index = index;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_literal(Value value) {
+static ASTNode* make_node_literal(int line, Value value) {
     ASTNodeLiteral* node = malloc(sizeof(ASTNodeLiteral));
     node->base.type = AST_NODE_LITERAL;
+    node->base.line = line;
     node->value = value;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_var(String* name) {
+static ASTNode* make_node_var(int line, String* name) {
     ASTNodeVar* node = malloc(sizeof(ASTNodeVar));
     node->base.type = AST_NODE_VAR;
+    node->base.line = line;
     node->name = name;
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_list() {
+static ASTNode* make_node_list(int line) {
     ASTNodeList* node = calloc(1, sizeof(ASTNodeList));
     node->base.type = AST_NODE_LIST;
+    node->base.line = line;
     return (ASTNode*)node;
 }
 
@@ -321,7 +341,8 @@ static ASTNode* parse_local_declaration() {
 
 static ASTNode* parse_variable_declaration() {
     consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
-    String* name = string_new(parser.previous.value, parser.previous.length);
+    Token identifier = parser.previous;
+    String* name = string_new(identifier.value, identifier.length);
 
     ASTNode* initializer = NULL;
     if (match(1, TOKEN_EQUAL)) {
@@ -329,13 +350,14 @@ static ASTNode* parse_variable_declaration() {
     }
 
     consume_expected(TOKEN_SEMICOLON, "expected ';' after variable declaration");
-    return make_node_var_decl(name, initializer);
+    return make_node_var_decl(identifier.line, name, initializer);
 }
 
 static ASTNode* parse_function_declaration() {
     // function name
     consume_expected(TOKEN_IDENTIFIER, "expected identifier name after declaration");
-    String* name = string_new(parser.previous.value, parser.previous.length);
+    Token identifier = parser.previous;
+    String* name = string_new(identifier.value, identifier.length);
 
     // function parameters
     consume_expected(TOKEN_LEFT_PAREN, "expected '(' after function name");
@@ -360,7 +382,7 @@ static ASTNode* parse_function_declaration() {
     ASTNode* body = parse_block();
     consume_expected(TOKEN_RIGHT_BRACE, "expected '}' after function body");
 
-    return make_node_func_decl(name, params, param_count, body);
+    return make_node_func_decl(identifier.line, name, params, param_count, body);
 }
 
 static ASTNode* parse_statement() {
@@ -370,12 +392,14 @@ static ASTNode* parse_statement() {
     if (match(1, TOKEN_RETURN)) return parse_return_statement();
 
     if (match(1, TOKEN_BREAK)) {
+        int line = parser.previous.line;
         consume_expected(TOKEN_SEMICOLON, "expected ';' after 'break'");
-        return make_node_break();
+        return make_node_break(line);
     }
     if (match(1, TOKEN_CONTINUE)) {
+        int line = parser.previous.line;
         consume_expected(TOKEN_SEMICOLON, "expected ';' after 'continue'");
-        return make_node_continue();
+        return make_node_continue(line);
     }
 
     if (match(1, TOKEN_LEFT_BRACE)) {
@@ -389,11 +413,13 @@ static ASTNode* parse_statement() {
 
 static ASTNode* parse_expression_statement() {
     ASTNode* expression = parse_expression();
+    int line = parser.previous.line;
     consume_expected(TOKEN_SEMICOLON, "expected ';' after expression");
-    return make_node_expr_stmt(expression);
+    return make_node_expr_stmt(line, expression);
 }
 
 static ASTNode* parse_if_statement() {
+    int line = parser.previous.line;
     consume_expected(TOKEN_LEFT_PAREN, "expected '(' after 'if'");
     ASTNode* condition = parse_expression();
     consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after 'if' condition");
@@ -404,22 +430,24 @@ static ASTNode* parse_if_statement() {
         else_branch = parse_statement();
     }
 
-    return make_node_if_stmt(condition, then_branch, else_branch);
+    return make_node_if_stmt(line, condition, then_branch, else_branch);
 }
 
 static ASTNode* parse_while_statement() {
+    int line = parser.previous.line;
     consume_expected(TOKEN_LEFT_PAREN, "expected '(' after 'while'");
     ASTNode* condition = parse_expression();
     consume_expected(TOKEN_RIGHT_PAREN, "expected ')' after 'while' condition");
 
     if (match(1, TOKEN_SEMICOLON)) {
-        return make_node_while_stmt(condition, NULL);
+        return make_node_while_stmt(line, condition, NULL);
     }
     ASTNode* body = parse_statement();
-    return make_node_while_stmt(condition, body);
+    return make_node_while_stmt(line, condition, body);
 }
 
 static ASTNode* parse_for_statement() {
+    int line = parser.previous.line;
     consume_expected(TOKEN_LEFT_PAREN, "expected '(' after 'for'");
 
     ASTNode* initializer;
@@ -448,23 +476,24 @@ static ASTNode* parse_for_statement() {
     ASTNode* body = parse_statement();
 
     if (condition == NULL) {
-        condition = make_node_literal(BOOL_VALUE(true));
+        condition = make_node_literal(0, BOOL_VALUE(true));
     }
 
-    return make_node_for_stmt(initializer, condition, increment, body);
+    return make_node_for_stmt(line, initializer, condition, increment, body);
 }
 
 static ASTNode* parse_return_statement() {
+    int line = parser.previous.line;
     ASTNode* expression = NULL;
     if (parser.current.type != TOKEN_SEMICOLON) {
         expression = parse_expression();
     }
     consume_expected(TOKEN_SEMICOLON, "expected ';' after 'return' statement");
-    return make_node_return_stmt(expression);
+    return make_node_return_stmt(line, expression);
 }
 
 static ASTNode* parse_block() {
-    ASTNodeBlock* block = (ASTNodeBlock*)make_node_block();
+    ASTNodeBlock* block = (ASTNodeBlock*)make_node_block(parser.previous.line);
     while (parser.current.type != TOKEN_RIGHT_BRACE && parser.current.type != TOKEN_EOF) {
         if (block->capacity < block->count + 1) {
             block->capacity = GROW_CAPACITY(block->capacity);
@@ -487,7 +516,7 @@ static ASTNode* parse_assignment() {
         ASTNode* value = parse_assignment();
         
         if (target->type == AST_NODE_VAR || target->type == AST_NODE_SUBSCRIPTION) {
-            return make_node_assignment(target, op_token.type, value);
+            return make_node_assignment(op_token.line, target, op_token.type, value);
         }
 
         error_at(op_token, "invalid assignment target");
@@ -500,13 +529,14 @@ static ASTNode* parse_ternary() {
     ASTNode* condition = parse_or();
 
     if (match(1, TOKEN_QUESTION)) {
+        int line = parser.previous.line;
         ASTNode* then_branch = parse_expression();
         
         consume_expected(TOKEN_COLON, "expected ':' after then branch");
 
         ASTNode* else_branch = parse_ternary();
 
-        return make_node_ternary(condition, then_branch, else_branch);
+        return make_node_ternary(line, condition, then_branch, else_branch);
     }
     return condition;
 }
@@ -514,8 +544,9 @@ static ASTNode* parse_ternary() {
 static ASTNode* parse_or() {
     ASTNode* left = parse_and();
     while (match(1, TOKEN_OR)) {
+        int line = parser.previous.line;
         ASTNode* right = parse_and();
-        left = make_node_logical(left, TOKEN_OR, right);
+        left = make_node_logical(line, left, TOKEN_OR, right);
     }
     return left;
 }
@@ -523,8 +554,9 @@ static ASTNode* parse_or() {
 static ASTNode* parse_and() {
     ASTNode* left = parse_equality();
     while (match(1, TOKEN_AND)) {
+        int line = parser.previous.line;
         ASTNode* right = parse_equality();
-        left = make_node_logical(left, TOKEN_AND, right);
+        left = make_node_logical(line, left, TOKEN_AND, right);
     }
     return left;
 }
@@ -532,9 +564,9 @@ static ASTNode* parse_and() {
 static ASTNode* parse_equality() {
     ASTNode* left = parse_comparison();
     while (match(2, TOKEN_EQUAL_EQUAL, TOKEN_NOT_EQUAL)) {
-        TokenType op = parser.previous.type;
+        Token op_token = parser.previous;
         ASTNode* right = parse_comparison();
-        left = make_node_binary(left, op, right);
+        left = make_node_binary(op_token.line, left, op_token.type, right);
     }
     return left;
 }
@@ -542,9 +574,9 @@ static ASTNode* parse_equality() {
 static ASTNode* parse_comparison() {
     ASTNode* left = parse_term();
     while (match(4, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_LESS, TOKEN_LESS_EQUAL)) {
-        TokenType op = parser.previous.type;
+        Token op_token = parser.previous;
         ASTNode* right = parse_term();
-        left = make_node_binary(left, op, right);
+        left = make_node_binary(op_token.line, left, op_token.type, right);
     }
     return left;
 }
@@ -552,9 +584,9 @@ static ASTNode* parse_comparison() {
 static ASTNode* parse_term() {
     ASTNode* left = parse_factor();
     while(match(2, TOKEN_PLUS, TOKEN_MINUS)) {
-        TokenType op = parser.previous.type;
+        Token op_token = parser.previous;
         ASTNode* right = parse_factor();
-        left = make_node_binary(left, op, right);
+        left = make_node_binary(op_token.line, left, op_token.type, right);
     }
     return left;
 }
@@ -562,24 +594,24 @@ static ASTNode* parse_term() {
 static ASTNode* parse_factor() {
     ASTNode* left = parse_unary();
     while (match(3, TOKEN_ASTERISK, TOKEN_SLASH, TOKEN_PERCENT)) {
-        TokenType op = parser.previous.type;
+        Token op_token = parser.previous;
         ASTNode* right = parse_unary();
-        left = make_node_binary(left, op, right);
+        left = make_node_binary(op_token.line, left, op_token.type, right);
     }
     return left;
 }
 
 static ASTNode* parse_unary() {
     if (match(2, TOKEN_MINUS, TOKEN_NOT)) {
-        TokenType op = parser.previous.type;
+        Token op_token = parser.previous;
         ASTNode* right = parse_primary();
-        return make_node_unary(op, right);
+        return make_node_unary(op_token.line, op_token.type, right);
     }
     return parse_call();
 }
 
 static ASTNode* finish_call(ASTNode* callee) {
-    ASTNodeCall* call = (ASTNodeCall*)make_node_call(callee);
+    ASTNodeCall* call = (ASTNodeCall*)make_node_call(parser.previous.line, callee);
 
     if (parser.current.type != TOKEN_RIGHT_PAREN) {
         do {
@@ -597,11 +629,12 @@ static ASTNode* finish_call(ASTNode* callee) {
 }
 
 static ASTNode* finish_subscription(ASTNode* expression) {
+    int line = parser.previous.line;
     ASTNode* index = parse_ternary();
 
     consume_expected(TOKEN_RIGHT_BRACKET, "expected ']' after index");
 
-    return make_node_subscription(expression, index);
+    return make_node_subscription(line, expression, index);
 }
 
 static ASTNode* parse_call() {
@@ -619,30 +652,32 @@ static ASTNode* parse_call() {
 }
 
 static ASTNode* parse_primary() {
+    int line = parser.current.line;
     if (match(1, TOKEN_IDENTIFIER)) {
         String* name = string_new(parser.previous.value, parser.previous.length);
-        return make_node_var(name);
+        return make_node_var(line, name);
     }
     if (match(1, TOKEN_INT)) {
         int64_t value = strtoll(parser.previous.value, NULL, 10);
-        return make_node_literal(INT_VALUE(value));
+        return make_node_literal(line, INT_VALUE(value));
     }
     if (match(1, TOKEN_FLOAT)) {
+        int line = parser.previous.line;
         double value = strtod(parser.previous.value, NULL);
-        return make_node_literal(FLOAT_VALUE(value));
+        return make_node_literal(line, FLOAT_VALUE(value));
     }
     if (match(1, TOKEN_STRING)) {
         String* string = string_new(parser.previous.value + 1, parser.previous.length - 2);
-        return make_node_literal(STRING_VALUE(string));
+        return make_node_literal(line, STRING_VALUE(string));
     }
     if (match(1, TOKEN_TRUE)) {
-        return make_node_literal(BOOL_VALUE(true));
+        return make_node_literal(line, BOOL_VALUE(true));
     }
     if (match(1, TOKEN_FALSE)) {
-        return make_node_literal(BOOL_VALUE(false));
+        return make_node_literal(line, BOOL_VALUE(false));
     }
     if (match(1, TOKEN_NULL)) {
-        return make_node_literal(NULL_VALUE());
+        return make_node_literal(line, NULL_VALUE());
     }
     if (match(1, TOKEN_LEFT_PAREN)) {
         ASTNode* inside = parse_expression();
@@ -661,7 +696,8 @@ static ASTNode* parse_primary() {
 }
 
 static ASTNode* parse_list() {
-    ASTNodeList* list = (ASTNodeList*)make_node_list();
+    int line = parser.previous.line;
+    ASTNodeList* list = (ASTNodeList*)make_node_list(line);
 
     if (parser.current.type == TOKEN_RIGHT_BRACKET) {
         return (ASTNode*)list;

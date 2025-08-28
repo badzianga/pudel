@@ -29,6 +29,7 @@ typedef enum {
 
 typedef struct ASTNode {
     ASTNodeType type;
+    int line;
 } ASTNode;
 
 typedef struct {
