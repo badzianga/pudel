@@ -11,6 +11,7 @@
 #include "parser.h"
 #include "value.h"
 
+static int current_line = 0;
 static Environment* global_scope = NULL;
 static Environment* env = NULL;
 
@@ -52,7 +53,7 @@ static bool is_truthy(Value value) {
 }
 
 static void runtime_error(const char* format, ...) {
-    fputs("runtime error: ", stderr);
+    fprintf(stderr, "[line %d] runtime error: ", current_line);
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
@@ -271,6 +272,8 @@ static Value* evaluate_subscription(ASTNodeSubscription* node) {
 }
 
 static Value evaluate(ASTNode* root) {
+    current_line = root->line;
+
     switch (root->type) {
         case AST_NODE_PROGRAM: {
             ASTNodeBlock* block = (ASTNodeBlock*)root;
