@@ -148,7 +148,15 @@ static TokenType identifier_type() {
                 }
             }
         } break;
-        case 'i': return check_keyword(1, 1, "f", TOKEN_IF);
+        case 'i': {
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'f': return (lexer.current - lexer.start == 2) ? TOKEN_IF : TOKEN_IDENTIFIER;
+                    case 'm': return check_keyword(2, 4, "port", TOKEN_IMPORT);
+                    default: break;
+                }
+            }
+        } break;
         case 'n': return check_keyword(1, 3, "ull", TOKEN_NULL);
         case 'o': return check_keyword(1, 1, "r", TOKEN_OR);
         case 'r': return check_keyword(1, 5, "eturn", TOKEN_RETURN);
@@ -281,6 +289,7 @@ const char* token_as_cstr(TokenType type) {
         "for",
         "func",
         "if",
+        "import",
         "null",
         "or",
         "return",

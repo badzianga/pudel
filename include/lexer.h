@@ -46,6 +46,7 @@ typedef enum TokenType {
     TOKEN_FOR,             // for
     TOKEN_FUNC,            // func
     TOKEN_IF,              // if
+    TOKEN_IMPORT,          // import
     TOKEN_NULL,            // null
     TOKEN_OR,              // or
     TOKEN_RETURN,          // return
