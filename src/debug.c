@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "debug.h"
+#include "parser.h"
 
 void debug_print_ast(ASTNode* root, int indent) {
     for (int i = 0; i < indent; ++i) printf("  ");
@@ -18,6 +19,10 @@ void debug_print_ast(ASTNode* root, int indent) {
             for (int i = 0; i < block->count; ++i) {
                 debug_print_ast(block->statements[i], indent + 1);
             }
+        } break;
+        case AST_NODE_IMPORT: {
+            ASTNodeVar* import = (ASTNodeVar*)root;
+            printf("Import: %s\n", import->name->data);
         } break;
         case AST_NODE_FUNC_DECL: {
             ASTNodeFuncDecl* func_decl = (ASTNodeFuncDecl*)root;

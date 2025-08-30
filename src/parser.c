@@ -100,6 +100,14 @@ static ASTNode* make_node_block(int line) {
     return (ASTNode*)node;
 }
 
+static ASTNode* make_node_import(int line, String* name) {
+    ASTNodeVar* node = malloc(sizeof(ASTNodeVar));
+    node->base.type = AST_NODE_IMPORT;
+    node->base.line = line;
+    node->name = name;
+    return (ASTNode*)node; 
+}
+
 static ASTNode* make_node_func_decl(int line, String* name, String** params, int param_count, ASTNode* body) {
     ASTNodeFuncDecl* node = malloc(sizeof(ASTNodeFuncDecl));
     node->base.type = AST_NODE_FUNC_DECL;
@@ -272,6 +280,7 @@ static ASTNode* make_node_list(int line) {
 static ASTNode* parse_program();
 static ASTNode* parse_global_declaration();
 static ASTNode* parse_local_declaration();
+static ASTNode* parse_import();
 static ASTNode* parse_function_declaration();
 static ASTNode* parse_variable_declaration();
 static ASTNode* parse_statement();
@@ -317,6 +326,9 @@ static ASTNode* parse_global_declaration() {
     else if (match(1, TOKEN_FUNC)) {
         stmt = parse_function_declaration();
     }
+    else if (match(1, TOKEN_IMPORT)) {
+        stmt = parse_import();
+    }
     else {
         stmt = parse_statement();
     }
@@ -331,6 +343,9 @@ static ASTNode* parse_local_declaration() {
     }
     else if (match(1, TOKEN_FUNC)) {
         error_at(parser.previous, "functions can be declared only in global scope");
+    }
+    else if (match(1, TOKEN_IMPORT)) {
+        stmt = parse_import();
     }
     else {
         stmt = parse_statement();
@@ -394,6 +409,17 @@ static ASTNode* parse_function_declaration() {
     }
 
     return make_node_func_decl(identifier.line, name, params, param_count, body);
+}
+
+static ASTNode* parse_import() {
+    if (match(1, TOKEN_IDENTIFIER)) {
+        String* name = string_new(parser.previous.value, parser.previous.length);
+        ASTNode* node = make_node_import(parser.previous.line, name);
+        consume_expected(TOKEN_SEMICOLON, "expected ';' after imported module name");
+        return node;
+    }
+    error_at(parser.current, "expected module name");
+    return NULL;
 }
 
 static ASTNode* parse_statement() {
@@ -747,6 +773,7 @@ void parser_free_ast(ASTNode* root) {
             }
             free(block->statements);
         } break;
+        case AST_NODE_IMPORT: break;
         case AST_NODE_FUNC_DECL: {
             ASTNodeFuncDecl* func_decl = (ASTNodeFuncDecl*)root;
             for (int i = 0; i < func_decl->param_count; ++i) {
