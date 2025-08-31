@@ -291,6 +291,10 @@ static Value evaluate(ASTNode* root) {
             env_free(env);
             env = previous;
         } break;
+        case AST_NODE_IMPORT: {
+            runtime_error("`import` is not supported yet");
+            return NULL_VALUE();
+        } break;
         case AST_NODE_FUNC_DECL: {
             ASTNodeFuncDecl* func_decl = (ASTNodeFuncDecl*)root;
             Function* function = malloc(sizeof(Function));  // FIXME: not freed
