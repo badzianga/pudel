@@ -6,6 +6,7 @@
 #include <time.h>
 #include "environment.h"
 #include "interpreter.h"
+#include "io.h"
 #include "lexer.h"
 #include "memory.h"
 #include "parser.h"
@@ -292,7 +293,29 @@ static Value evaluate(ASTNode* root) {
             env = previous;
         } break;
         case AST_NODE_IMPORT: {
-            runtime_error("`import` is not supported yet");
+            ASTNodeVar* import = (ASTNodeVar*)root;
+
+            Environment* this_global = global_scope;
+            Environment* this_current = env;
+            
+            // TODO: create yet another environment higher than global scope, use it only for natives
+            // this way, they will be imported only once
+
+            char* source = file_read(import->name->data);
+            ASTNode* imported_ast = NULL;
+
+            if (!parser_parse(source, &imported_ast)) {
+                runtime_error("there were errors during parsing imported module `%s`", import->name);
+            }
+
+            interpreter_interpret(imported_ast);
+
+            parser_free_ast(imported_ast);
+            free(source);
+
+            global_scope = this_global;
+            env = this_current;
+
             return NULL_VALUE();
         } break;
         case AST_NODE_FUNC_DECL: {
