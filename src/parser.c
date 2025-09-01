@@ -412,13 +412,13 @@ static ASTNode* parse_function_declaration() {
 }
 
 static ASTNode* parse_import() {
-    if (match(1, TOKEN_IDENTIFIER)) {
-        String* name = string_new(parser.previous.value, parser.previous.length);
+    if (match(1, TOKEN_STRING)) {
+        String* name = string_new(parser.previous.value + 1, parser.previous.length - 2);
         ASTNode* node = make_node_import(parser.previous.line, name);
         consume_expected(TOKEN_SEMICOLON, "expected ';' after imported module name");
         return node;
     }
-    error_at(parser.current, "expected module name");
+    error_at(parser.current, "expected path to module name in quotation marks");
     return NULL;
 }
 
