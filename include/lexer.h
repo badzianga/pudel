@@ -39,6 +39,7 @@ typedef enum TokenType {
     TOKEN_STRING,          // ""
 
     TOKEN_AND,             // and
+    TOKEN_AS,              // as
     TOKEN_BREAK,           // break
     TOKEN_CONTINUE,        // continue
     TOKEN_ELSE,            // else

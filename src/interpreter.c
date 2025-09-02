@@ -294,19 +294,19 @@ static Value evaluate(ASTNode* root) {
             current_scope = previous_scope;
         } break;
         case AST_NODE_IMPORT: {
-            ASTNodeVar* import = (ASTNodeVar*)root;
+            ASTNodeImport* import = (ASTNodeImport*)root;
 
             Environment* this_global = global_scope;
             Environment* this_current = current_scope;
             
-            char* source = file_read(import->name->data);
+            char* source = file_read(import->path->data);
             ASTNode* imported_ast = NULL;
 
             if (!parser_parse(source, &imported_ast)) {
-                runtime_error("there were errors during parsing imported module `%s`", import->name);
+                runtime_error("there were errors during parsing imported module `%s`", import->path->data);
             }
 
-            // create scopes for module, interpret module
+            // create scopes for module, interpret imported module
             global_scope = env_new_with_enclosing(natives_scope);
             current_scope = global_scope;
             evaluate(imported_ast);

@@ -21,8 +21,14 @@ void debug_print_ast(ASTNode* root, int indent) {
             }
         } break;
         case AST_NODE_IMPORT: {
-            ASTNodeVar* import = (ASTNodeVar*)root;
-            printf("Import: %s\n", import->name->data);
+            ASTNodeImport* import = (ASTNodeImport*)root;
+            printf("Import: %s", import->path->data);
+            if (import->name != NULL) {
+                printf(" as %s\n", import->name->data);
+            }
+            else {
+                printf("\n");
+            }
         } break;
         case AST_NODE_FUNC_DECL: {
             ASTNodeFuncDecl* func_decl = (ASTNodeFuncDecl*)root;

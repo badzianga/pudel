@@ -100,10 +100,11 @@ static ASTNode* make_node_block(int line) {
     return (ASTNode*)node;
 }
 
-static ASTNode* make_node_import(int line, String* name) {
-    ASTNodeVar* node = malloc(sizeof(ASTNodeVar));
+static ASTNode* make_node_import(int line, String* path, String* name) {
+    ASTNodeImport* node = malloc(sizeof(ASTNodeImport));
     node->base.type = AST_NODE_IMPORT;
     node->base.line = line;
+    node->path = path;
     node->name = name;
     return (ASTNode*)node; 
 }
@@ -413,12 +414,24 @@ static ASTNode* parse_function_declaration() {
 
 static ASTNode* parse_import() {
     if (match(1, TOKEN_STRING)) {
-        String* name = string_new(parser.previous.value + 1, parser.previous.length - 2);
-        ASTNode* node = make_node_import(parser.previous.line, name);
-        consume_expected(TOKEN_SEMICOLON, "expected ';' after imported module name");
-        return node;
+        String* path = string_new(parser.previous.value + 1, parser.previous.length - 2);
+        int line = parser.previous.line;
+        String* name = NULL;
+        if (!match(1, TOKEN_AS)) {
+            consume_expected(TOKEN_SEMICOLON, "expected ';' after module path");
+        }
+        else {
+            if (match(1, TOKEN_IDENTIFIER)) {
+                name = string_new(parser.previous.value, parser.previous.length);
+                consume_expected(TOKEN_SEMICOLON, "expected ';' after module name");
+            }
+            else {
+                error_at(parser.current, "expected module name");
+            }
+        }
+        return make_node_import(parser.previous.line, path, name);
     }
-    error_at(parser.current, "expected path to module name in quotation marks");
+    error_at(parser.current, "expected path to module in quotation marks");
     return NULL;
 }
 

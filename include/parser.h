@@ -44,6 +44,13 @@ typedef struct {
 typedef struct {
     ASTNode base;
 
+    String* path;
+    String* name;
+} ASTNodeImport;
+
+typedef struct {
+    ASTNode base;
+
     String* name;
     String** params;
     int param_count;
