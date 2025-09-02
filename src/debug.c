@@ -141,6 +141,11 @@ void debug_print_ast(ASTNode* root, int indent) {
                 debug_print_ast(call->arguments[i], indent + 1);
             }
         } break;
+        case AST_NODE_GET: {
+            ASTNodeGet* get = (ASTNodeGet*)root;
+            printf("Get: %s\n", get->name->data);
+            debug_print_ast(get->object, indent + 1);
+        } break;
         case AST_NODE_SUBSCRIPTION: {
             ASTNodeSubscription* subscription = (ASTNodeSubscription*)root;
             printf("Subscription:\n");

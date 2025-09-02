@@ -255,6 +255,15 @@ static ASTNode* make_node_subscription(int line, ASTNode* expression, ASTNode* i
     return (ASTNode*)node;
 }
 
+static ASTNode* make_node_get(int line, ASTNode* object, String* name) {
+    ASTNodeGet* node = malloc(sizeof(ASTNodeGet));
+    node->base.type = AST_NODE_GET;
+    node->base.line = line;
+    node->object = object;
+    node->name = name;
+    return (ASTNode*)node;
+}
+
 static ASTNode* make_node_literal(int line, Value value) {
     ASTNodeLiteral* node = malloc(sizeof(ASTNodeLiteral));
     node->base.type = AST_NODE_LITERAL;
@@ -692,9 +701,17 @@ static ASTNode* parse_call() {
     for (;;) {
         if (match(1, TOKEN_LEFT_PAREN)) {
             expr = finish_call(expr);
-        } else if (match(1, TOKEN_LEFT_BRACKET)) {
+        }
+        else if (match(1, TOKEN_LEFT_BRACKET)) {
             expr = finish_subscription(expr);
-        } else {
+        }
+        else if (match(1, TOKEN_DOT)) {
+            int line = parser.previous.line;
+            consume_expected(TOKEN_IDENTIFIER, "expected property name after '.'");
+            String* name = string_new(parser.previous.value, parser.previous.length);
+            expr = make_node_get(line, expr, name);
+        }
+        else {
             break;
         }
     }
@@ -861,6 +878,10 @@ void parser_free_ast(ASTNode* root) {
                 parser_free_ast(call->arguments[i]);
             }
             free(call->arguments);
+        } break;
+        case AST_NODE_GET: {
+            ASTNodeGet* get = (ASTNodeGet*)root;
+            parser_free_ast(get->object);
         } break;
         case AST_NODE_SUBSCRIPTION: {
             ASTNodeSubscription* subscription = (ASTNodeSubscription*)root;
