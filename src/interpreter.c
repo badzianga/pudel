@@ -13,6 +13,7 @@
 #include "value.h"
 
 static int current_line = 0;
+static Environment* natives_scope = NULL;  // natives, present in all modules
 static Environment* global_scope  = NULL;  // globals present in current module
 static Environment* current_scope = NULL;  // currently interpreted scope in current module
 
@@ -184,18 +185,18 @@ static Value length_native(int argc, Value* argv) {
 }
 
 static void add_natives() {
-    env_define(global_scope, string_from("clock"), NATIVE_VALUE(clock_native));
-    env_define(global_scope, string_from("print"), NATIVE_VALUE(print_native));
-    env_define(global_scope, string_from("input"), NATIVE_VALUE(input_native));
-    env_define(global_scope, string_from("typeof"), NATIVE_VALUE(typeof_native));
+    env_define(natives_scope, string_from("clock"), NATIVE_VALUE(clock_native));
+    env_define(natives_scope, string_from("print"), NATIVE_VALUE(print_native));
+    env_define(natives_scope, string_from("input"), NATIVE_VALUE(input_native));
+    env_define(natives_scope, string_from("typeof"), NATIVE_VALUE(typeof_native));
 
-    env_define(global_scope, string_from("int"), NATIVE_VALUE(int_native));
-    env_define(global_scope, string_from("float"), NATIVE_VALUE(float_native));
-    env_define(global_scope, string_from("bool"), NATIVE_VALUE(bool_native));
-    env_define(global_scope, string_from("string"), NATIVE_VALUE(string_native));
+    env_define(natives_scope, string_from("int"), NATIVE_VALUE(int_native));
+    env_define(natives_scope, string_from("float"), NATIVE_VALUE(float_native));
+    env_define(natives_scope, string_from("bool"), NATIVE_VALUE(bool_native));
+    env_define(natives_scope, string_from("string"), NATIVE_VALUE(string_native));
 
-    env_define(global_scope, string_from("append"), NATIVE_VALUE(append_native));
-    env_define(global_scope, string_from("length"), NATIVE_VALUE(length_native));
+    env_define(natives_scope, string_from("append"), NATIVE_VALUE(append_native));
+    env_define(natives_scope, string_from("length"), NATIVE_VALUE(length_native));
 }
 
 static Value promote(Value value, ValueType target_type) {
@@ -298,9 +299,6 @@ static Value evaluate(ASTNode* root) {
             Environment* this_global = global_scope;
             Environment* this_current = current_scope;
             
-            // TODO: create yet another environment higher than global scope, use it only for natives
-            // this way, they will be imported only once
-
             char* source = file_read(import->name->data);
             ASTNode* imported_ast = NULL;
 
@@ -308,7 +306,11 @@ static Value evaluate(ASTNode* root) {
                 runtime_error("there were errors during parsing imported module `%s`", import->name);
             }
 
-            interpreter_interpret(imported_ast);
+            // create scopes for module, interpret module
+            global_scope = env_new_with_enclosing(natives_scope);
+            current_scope = global_scope;
+            evaluate(imported_ast);
+            env_free(current_scope);
 
             parser_free_ast(imported_ast);
             free(source);
@@ -736,9 +738,11 @@ static Value evaluate(ASTNode* root) {
 }
 
 Value interpreter_interpret(ASTNode* root) {
-    global_scope = env_new();
-    current_scope = global_scope;
+    natives_scope = env_new();
     add_natives();
+
+    global_scope = env_new_with_enclosing(natives_scope);
+    current_scope = global_scope;
 
     Value value = evaluate(root);
     env_free(current_scope);
