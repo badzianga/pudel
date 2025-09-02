@@ -317,8 +317,9 @@ static Value evaluate(ASTNode* root) {
                 env_define(this_current, import->name, MODULE_VALUE(module_new(import->name, global_scope)));
             }
 
-            env_free(current_scope);
-            parser_free_ast(imported_ast);
+            // TODO: functions and globals should not be freed from the module, because they can be used
+            // however, from now, pointer to this AST will be lost, so huge memory leak coming right up
+            // parser_free_ast(imported_ast);
             free(source);
 
             global_scope = this_global;
@@ -713,6 +714,19 @@ static Value evaluate(ASTNode* root) {
             else {
                 runtime_error("attempt to call a non-function value");
             }
+        } break;
+        case AST_NODE_GET: {
+            ASTNodeGet* get = (ASTNodeGet*)root;
+            Value object_value = evaluate(get->object);
+            switch (object_value.type) {
+                case VALUE_MODULE: {
+                    return *env_get_ref(object_value.module->env, get->name);
+                }
+                default: {
+                    runtime_error("Object of type '%s' doesn't have properties", value_type_as_cstr(object_value.type));
+                }
+            }
+            return NULL_VALUE();
         } break;
         case AST_NODE_SUBSCRIPTION: {
             ASTNodeSubscription* subscription = (ASTNodeSubscription*)root;
