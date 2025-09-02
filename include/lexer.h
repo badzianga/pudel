@@ -12,6 +12,7 @@ typedef enum TokenType {
     TOKEN_SEMICOLON,       // ;
     TOKEN_COLON,           // :
     TOKEN_COMMA,           // ,
+    TOKEN_DOT,             // .
     TOKEN_QUESTION,        // ?
 
     TOKEN_PLUS,            // +

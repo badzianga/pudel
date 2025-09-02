@@ -217,6 +217,8 @@ Token lexer_next_token() {
             return make_token(TOKEN_COLON);
         case ',':
             return make_token(TOKEN_COMMA);
+        case '.':
+            return make_token(TOKEN_DOT);
         case '?':
             return make_token(TOKEN_QUESTION);
         case '+':
@@ -262,6 +264,7 @@ const char* token_as_cstr(TokenType type) {
         ";",
         ":",
         ",",
+        ".",
         "?",
 
         "+",
