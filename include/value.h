@@ -12,6 +12,7 @@ typedef enum {
     VALUE_LIST,
     VALUE_NATIVE,
     VALUE_FUNCTION,
+    VALUE_MODULE,
 } ValueType;
 
 typedef struct String {
@@ -31,6 +32,7 @@ typedef struct {
 typedef Value (*NativeFn)(int argc, Value* argv);
 
 struct ASTNode;
+struct Environment;
 
 typedef struct {
     String* name;
@@ -38,6 +40,11 @@ typedef struct {
     int param_count;
     struct ASTNode* body;
 } Function;
+
+typedef struct {
+    String* name;
+    struct Environment* env;
+} Module;
 
 struct Value {
     ValueType type;
@@ -49,6 +56,7 @@ struct Value {
         List* list;
         NativeFn native;
         Function* function;
+        Module* module;
     };
 };
 
@@ -60,6 +68,7 @@ struct Value {
 #define IS_LIST(value)        ((value).type == VALUE_LIST)
 #define IS_NATIVE(value)      ((value).type == VALUE_NATIVE)
 #define IS_FUNCTION(value)    ((value).type == VALUE_FUNCTION)
+#define IS_MODULE(value)      ((value).type == VALUE_MODULE)
 
 #define NULL_VALUE()          ((Value){ .type = VALUE_NULL,     .integer = 0 })
 #define INT_VALUE(value)      ((Value){ .type = VALUE_INT,      .integer = value })
@@ -69,6 +78,7 @@ struct Value {
 #define LIST_VALUE(value)     ((Value){ .type = VALUE_LIST,     .list = value })
 #define NATIVE_VALUE(value)   ((Value){ .type = VALUE_NATIVE,   .native = value })
 #define FUNCTION_VALUE(value) ((Value){ .type = VALUE_FUNCTION, .function = value })
+#define MODULE_VALUE(value)   ((Value){ .type = VALUE_MODULE,   .module = value })
 
 const char* value_type_as_cstr(ValueType type);
 
@@ -83,3 +93,5 @@ bool strings_equal(String* a, String* b);
 
 List* list_new(int length);
 bool lists_equal(List* a, List* b);
+
+Module* module_new(String* name, struct Environment* env);

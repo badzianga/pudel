@@ -429,7 +429,7 @@ static ASTNode* parse_import() {
                 error_at(parser.current, "expected module name");
             }
         }
-        return make_node_import(parser.previous.line, path, name);
+        return make_node_import(line, path, name);
     }
     error_at(parser.current, "expected path to module in quotation marks");
     return NULL;

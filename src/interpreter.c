@@ -50,6 +50,7 @@ static bool is_truthy(Value value) {
         case VALUE_LIST:   return value.list->length != 0;
         case VALUE_NATIVE: return true;
         case VALUE_FUNCTION: return true;
+        case VALUE_MODULE: return true;
     }
     return false;
 }
@@ -310,8 +311,13 @@ static Value evaluate(ASTNode* root) {
             global_scope = env_new_with_enclosing(natives_scope);
             current_scope = global_scope;
             evaluate(imported_ast);
-            env_free(current_scope);
 
+            if (import->name != NULL) {
+                // FIXME: module not freed
+                env_define(this_current, import->name, MODULE_VALUE(module_new(import->name, global_scope)));
+            }
+
+            env_free(current_scope);
             parser_free_ast(imported_ast);
             free(source);
 

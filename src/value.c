@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "environment.h"
 #include "hash.h"
 #include "strings.h"
 #include "value.h"
@@ -15,6 +16,7 @@ const char* value_type_as_cstr(ValueType type) {
         case VALUE_LIST:     return "list";
         case VALUE_NATIVE:   return "native_func";
         case VALUE_FUNCTION: return "function";
+        case VALUE_MODULE:   return "module";
     }
     return "unknown";
 }
@@ -29,6 +31,7 @@ bool values_equal(Value a, Value b) {
         case VALUE_LIST:     return lists_equal(a.list, b.list);
         case VALUE_NATIVE:   return a.native == b.native;
         case VALUE_FUNCTION: return strings_equal(a.function->name, b.function->name);
+        case VALUE_MODULE:   return strings_equal(a.module->name, b.module->name);
         default:             return false;
     }
 }
@@ -73,6 +76,9 @@ void print_value(Value value) {
         case VALUE_FUNCTION: {
             printf("<function %s>", value.function->name->data);
         } break;
+        case VALUE_MODULE: {
+            printf("<module %s>", value.module->name->data);
+        }
     }
 }
 
@@ -119,4 +125,11 @@ bool lists_equal(List* a, List* b) {
         if (!values_equal(a->values[i], b->values[i])) return false;
     }
     return true;
+}
+
+Module* module_new(String* name, Environment* env) {
+    Module* module = malloc(sizeof(Module));
+    module->name = name;
+    module->env = env;
+    return module;
 }
