@@ -13,8 +13,8 @@
 #include "value.h"
 
 static int current_line = 0;
-static Environment* global_scope = NULL;
-static Environment* env = NULL;
+static Environment* global_scope  = NULL;  // globals present in current module
+static Environment* current_scope = NULL;  // currently interpreted scope in current module
 
 typedef enum {
     CTX_OTHER,
@@ -284,19 +284,19 @@ static Value evaluate(ASTNode* root) {
         } break;
         case AST_NODE_BLOCK: {
             ASTNodeBlock* block = (ASTNodeBlock*)root;
-            Environment* previous = env;
-            env = env_new_with_enclosing(previous);
+            Environment* previous_scope = current_scope;
+            current_scope = env_new_with_enclosing(previous_scope);
             for (int i = 0; i < block->count; ++i) {
                 evaluate(block->statements[i]);
             }
-            env_free(env);
-            env = previous;
+            env_free(current_scope);
+            current_scope = previous_scope;
         } break;
         case AST_NODE_IMPORT: {
             ASTNodeVar* import = (ASTNodeVar*)root;
 
             Environment* this_global = global_scope;
-            Environment* this_current = env;
+            Environment* this_current = current_scope;
             
             // TODO: create yet another environment higher than global scope, use it only for natives
             // this way, they will be imported only once
@@ -314,7 +314,7 @@ static Value evaluate(ASTNode* root) {
             free(source);
 
             global_scope = this_global;
-            env = this_current;
+            current_scope = this_current;
 
             return NULL_VALUE();
         } break;
@@ -335,7 +335,7 @@ static Value evaluate(ASTNode* root) {
             if (var_decl->initializer != NULL) {
                 value = evaluate(var_decl->initializer);
             }
-            if (env_define(env, var_decl->name, value)) {
+            if (env_define(current_scope, var_decl->name, value)) {
                 runtime_error("redeclaration of variable '%s'", var_decl->name->data);
             }
         } break;
@@ -378,8 +378,8 @@ static Value evaluate(ASTNode* root) {
         case AST_NODE_FOR_STMT: {
             ASTNodeForStmt* for_stmt = (ASTNodeForStmt*)root;
 
-            Environment* previous = env;
-            env = env_new_with_enclosing(previous);
+            Environment* previous_scope = current_scope;
+            current_scope = env_new_with_enclosing(previous_scope);
 
             if (for_stmt->initializer != NULL) {
                 evaluate(for_stmt->initializer);
@@ -411,8 +411,8 @@ static Value evaluate(ASTNode* root) {
                 }
             }
 
-            env_free(env);
-            env = previous;
+            env_free(current_scope);
+            current_scope = previous_scope;
         } break;
         case AST_NODE_RETURN_STMT: {
             ASTNodeExprStmt* return_stmt = (ASTNodeExprStmt*)root;
@@ -447,7 +447,7 @@ static Value evaluate(ASTNode* root) {
             Value* var = NULL;
             if (assignment->target->type == AST_NODE_VAR) {
                 ASTNodeVar* target = (ASTNodeVar*)assignment->target;
-                var = env_get_ref(env, target->name);
+                var = env_get_ref(current_scope, target->name);
                 if (var == NULL) {
                     runtime_error("undeclared identifier '%s'", target->name->data);
                 }
@@ -674,12 +674,12 @@ static Value evaluate(ASTNode* root) {
                 if (callee.function->param_count != call->count) {
                     runtime_error("expected %d arguments, but got %d", callee.function->param_count, call->count);
                 }
-                Environment* tmp = env;
+                Environment* previous_scope = current_scope;
                 Environment* func_scope = env_new_with_enclosing(global_scope);
                 for (int i = 0; i < call->count; ++i) {
                     env_define(func_scope, callee.function->params[i], evaluate(call->arguments[i]));
                 }
-                env = func_scope;
+                current_scope = func_scope;
 
                 ControlContext ctx = { 0 };
                 ctx.parent = current_context;
@@ -698,10 +698,9 @@ static Value evaluate(ASTNode* root) {
                 }
 
                 current_context = ctx.parent;
-                env = tmp;
                 free(func_scope);
+                current_scope = previous_scope;
                 return return_value;
-                
             }
             else {
                 runtime_error("attempt to call a non-function value");
@@ -717,7 +716,7 @@ static Value evaluate(ASTNode* root) {
         }
         case AST_NODE_VAR: {
             ASTNodeVar* var = (ASTNodeVar*)root;
-            Value* variable = env_get_ref(env, var->name);
+            Value* variable = env_get_ref(current_scope, var->name);
             if (variable == NULL) {
                 runtime_error("undeclared identifier '%s'", var->name->data);
             }
@@ -738,10 +737,10 @@ static Value evaluate(ASTNode* root) {
 
 Value interpreter_interpret(ASTNode* root) {
     global_scope = env_new();
-    env = global_scope;
+    current_scope = global_scope;
     add_natives();
 
     Value value = evaluate(root);
-    env_free(env);
+    env_free(current_scope);
     return value;
 }
